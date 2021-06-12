@@ -1,0 +1,3 @@
+cd builddir/clients
+
+./simple-egl

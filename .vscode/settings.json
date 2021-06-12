@@ -1,0 +1,6 @@
+{
+	"files.associations": {
+		"smccominternal.h": "c",
+		"smscore.h": "c"
+	}
+}
