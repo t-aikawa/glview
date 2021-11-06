@@ -267,7 +267,19 @@ static const struct glv_window_listener _simple_egl_main_window_listener = {
 };
 const struct glv_window_listener *simple_egl_main_window_listener = &_simple_egl_main_window_listener;
 
+glvWindow	glv_main_window = NULL;
+
+int main_frame_start(glvWindow glv_frame_window,int width, int height)
+{
+	printf("main_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
+	glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,&glv_main_window,"simple-egl-window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glvOnReDraw(glv_main_window);
+	return(GLV_OK);
+}
+
 static const struct glv_frame_listener _main_frame_window_listener = {
+	.start	= main_frame_start,
 	.back	= GLV_FRAME_BACK_DRAW_OFF,
 };
 static const struct glv_frame_listener *main_frame_window_listener = &_main_frame_window_listener;
@@ -279,7 +291,6 @@ int main(int argc, char *argv[])
 {
 	glvDisplay	glv_dpy;
 	glvWindow	glv_frame_window = NULL;
-	glvWindow	glv_main_window = NULL;
 	int WinWidth = 400, WinHeight = 400;
 
 	fprintf(stdout,"%s\n",APP_NAME_TEXT);
@@ -291,11 +302,6 @@ int main(int argc, char *argv[])
 	}
 
 	glvCreateFrameWindow(glv_dpy,main_frame_window_listener,&glv_frame_window,"frame window",APP_NAME_TEXT,WinWidth, WinHeight);
-
-	glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,&glv_main_window,"simple-egl-window",
-			0, 0, WinWidth, WinHeight,GLV_WINDOW_ATTR_DEFAULT);
-
-	glvOnReDraw(glv_main_window);
 
 	/* ----------------------------------------------------------------------------------------------- */
 	glvEnterEventLoop(glv_dpy);		// event loop

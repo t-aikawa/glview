@@ -346,6 +346,13 @@ void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t in
 	glv_window->eventFunc.init = init;
 }
 
+void glvWindow_setHandler_start(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_start_t start)
+{
+	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
+	if(glv_window == NULL) return;
+	glv_window->eventFunc.start = start;
+}
+
 void glvWindow_setHandler_configure(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_configure_t configure)
 {
 	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
@@ -1197,6 +1204,15 @@ void *glvSurfaceViewProc(void *param)
 		rc = (glv_window->eventFunc.init)(glv_window,glv_window->width,glv_window->height);
 		if(rc != GLV_OK){
 			fprintf(stderr,"glv_window->eventFunc.init error\n");
+		}
+	}
+
+	if(glv_window->glv_dpy->wl_dpy.ivi_application){
+		// ivi アプリの場合は、surface の configureが呼び出されないので、ここで起動処理を実行する
+		int rc;
+		rc = (glv_window->eventFunc.start)(glv_window,glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+		if(rc != GLV_OK){
+			fprintf(stderr,"glv_window->eventFunc.start error\n");
 		}
 	}
 

@@ -584,11 +584,14 @@ static void pointer_handle_motion(void *data, struct wl_pointer *pointer,
 	if((pointer_button_stat != GLV_MOUSE_EVENT_PRESS) || (pointer_left_stat == GLV_MOUSE_EVENT_LEFT_PRESS)){
 		// マウスのボタンが何も押されていないか、またはレフトボタンのみ押されている場合
 		_glv_wiget_mousePointer_front(glv_input,glv_window,GLV_MOUSE_EVENT_MOTION,time,glv_input->pointer_sx,glv_input->pointer_sy,pointer_left_stat);
+
+		if(glv_window != NULL){
 #ifndef GLV_GESTURE_EVENT_MOTION
-		if((pointer_left_stat == GLV_MOUSE_EVENT_LEFT_PRESS) || ((glv_window->attr & GLV_WINDOW_ATTR_POINTER_MOTION) == GLV_WINDOW_ATTR_POINTER_MOTION))
+			if((pointer_left_stat == GLV_MOUSE_EVENT_LEFT_PRESS) || ((glv_window->attr & GLV_WINDOW_ATTR_POINTER_MOTION) == GLV_WINDOW_ATTR_POINTER_MOTION))
 #endif /* GLV_GESTURE_EVENT_MOTION */
-		{
-			_glv_window_and_sheet_mousePointer_front(glv_window,GLV_MOUSE_EVENT_MOTION,time,glv_input->pointer_sx,glv_input->pointer_sy,pointer_left_stat);
+			{
+				_glv_window_and_sheet_mousePointer_front(glv_window,GLV_MOUSE_EVENT_MOTION,time,glv_input->pointer_sx,glv_input->pointer_sy,pointer_left_stat);
+			}
 		}
 	}
 	if(pointer_button_stat == GLV_MOUSE_EVENT_PRESS){
@@ -1003,7 +1006,24 @@ static void xdg_wm_surface_handle_configure(void *data,
 			     struct xdg_surface *surface,
 			     uint32_t serial)
 {
+	GLV_WINDOW_t *glv_window = data;
+
 	xdg_surface_ack_configure(surface, serial);
+
+	//printf("********************* xdg_wm_surface_handle_configure name:%s\n",glv_window->name);
+
+	if(glv_window->flag_configure == 0){
+		glv_window->flag_configure = 1;
+		//printf("********************* start xdg_wm_surface_handle_configure name:%s\n",glv_window->name);
+		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+		if(glv_window->eventFunc.start != NULL){
+			int rc;
+			rc = (glv_window->eventFunc.start)(glv_window,glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+			if(rc != GLV_OK){
+				fprintf(stderr,"[%s] glv_window->eventFunc.start error\n",glv_window->name);
+			}
+		}
+	}
 }
 
 static const struct xdg_surface_listener xdg_wm_surface_listener = {
@@ -1091,7 +1111,24 @@ static const struct xdg_toplevel_listener xdg_wm_toplevel_listener = {
 static void handle_zxdgV6_surface_configure(void *data, struct zxdg_surface_v6 *surface,
 			 uint32_t serial)
 {
+	GLV_WINDOW_t *glv_window = data;
+
 	zxdg_surface_v6_ack_configure(surface, serial);
+
+	//printf("********************* handle_zxdgV6_surface_configure name:%s\n",glv_window->name);
+
+	if(glv_window->flag_configure == 0){
+		glv_window->flag_configure = 1;
+		//printf("********************* start handle_zxdgV6_surface_configure name:%s\n",glv_window->name);
+		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+		if(glv_window->eventFunc.start != NULL){
+			int rc;
+			rc = (glv_window->eventFunc.start)(glv_window,glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+			if(rc != GLV_OK){
+				fprintf(stderr,"[%s] glv_window->eventFunc.start error\n",glv_window->name);
+			}
+		}
+	}
 }
 
 static const struct zxdg_surface_v6_listener xdg_zxdgV6_surface_listener = {
@@ -1121,6 +1158,22 @@ static void handle_configure(void *data, struct wl_shell_surface *shell_surface,
 		 uint32_t edges, int32_t width, int32_t height)
 {
 	// resize
+	GLV_WINDOW_t *glv_window = data;
+
+	//printf("********************* handle_configure name:%s\n",glv_window->name);
+
+	if(glv_window->flag_configure == 0){
+		glv_window->flag_configure = 1;
+		//printf("********************* start handle_configure name:%s\n",glv_window->name);
+		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+		if(glv_window->eventFunc.start != NULL){
+			int rc;
+			rc = (glv_window->eventFunc.start)(glv_window,glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+			if(rc != GLV_OK){
+				fprintf(stderr,"[%s] glv_window->eventFunc.start error\n",glv_window->name);
+			}
+		}
+	}
 }
 
 static void handle_popup_done(void *data, struct wl_shell_surface *shell_surface)

@@ -278,6 +278,7 @@ enum cursor_type {
 // 関数ポインタ定義
 //-----------------------------------
 typedef int (*GLV_WINDOW_EVENT_FUNC_init_t)(glvWindow glv_win,int width, int height);
+typedef int (*GLV_WINDOW_EVENT_FUNC_start_t)(glvWindow glv_win,int width, int height);
 typedef int (*GLV_WINDOW_EVENT_FUNC_configure_t)(glvWindow glv_win,int width, int height);
 typedef int (*GLV_WINDOW_EVENT_FUNC_reshape_t)(glvWindow glv_win,int width, int height);
 typedef int (*GLV_WINDOW_EVENT_FUNC_redraw_t)(glvWindow glv_win,int drawStat);
@@ -315,6 +316,7 @@ typedef int (*GLV_WIGET_EVENT_FUNC_focus_t)(glvWindow glv_win,glvSheet sheet,glv
 typedef int (*GLV_WIGET_EVENT_FUNC_terminate_t)(glvWiget wiget);
 
 struct glv_frame_listener {
+	GLV_WINDOW_EVENT_FUNC_start_t		start;
 	GLV_WINDOW_EVENT_FUNC_configure_t	configure;
 	GLV_WINDOW_EVENT_FUNC_terminate_t	terminate;
 	int									cmdMenu;
@@ -457,6 +459,7 @@ void glvEscapeEventLoop(glvDisplay glv_dpy);
 
 void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *class);
 void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t init);
+void glvWindow_setHandler_start(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_start_t start);
 void glvWindow_setHandler_configure(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_configure_t configure);
 void glvWindow_setHandler_reshape(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_reshape_t reshape);
 void glvWindow_setHandler_redraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_redraw_t redraw);

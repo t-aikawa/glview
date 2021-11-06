@@ -63,8 +63,9 @@ extern "C" {
 
 typedef struct _glv_window_event_func {
 	struct glv_window_listener				*class;
-	GLV_WINDOW_EVENT_FUNC_configure_t		configure;
 	GLV_WINDOW_EVENT_FUNC_init_t			init;
+	GLV_WINDOW_EVENT_FUNC_start_t			start;
+	GLV_WINDOW_EVENT_FUNC_configure_t		configure;
 	GLV_WINDOW_EVENT_FUNC_reshape_t			reshape;
 	GLV_WINDOW_EVENT_FUNC_redraw_t			redraw;
 	GLV_WINDOW_EVENT_FUNC_update_t			update;
@@ -196,6 +197,7 @@ typedef struct _glv_window {
 	int			attr;
 	int			drawCount;
     int         top;
+	int			flag_configure;			// 最初に surface の configure イベントが呼ばれた
 	GLV_FRAME_INFO_t	frameInfo;
 	/* --------------------------- */
 	// for debug

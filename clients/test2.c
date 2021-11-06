@@ -301,6 +301,15 @@ static const struct glv_window_listener _simple_egl_main_window_listener = {
 };
 const struct glv_window_listener *simple_egl_main_window_listener = &_simple_egl_main_window_listener;
 
+int simple_egl_frame_start(glvWindow glv_frame_window,int width, int height)
+{
+	printf("sub_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
+	glvCreateWindow(glv_frame_window,simple_egl_sub_window_listener,&simple_egl_window,"simple-egl-sub-window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glvOnReDraw(simple_egl_window);
+	return(GLV_OK);
+}
+
 static int simple_egl_frame_configure(glvWindow glv_win,int width, int height)
 {
 	//printf("simple_egl__frame_configure width = %d , height = %d\n",width,height);
@@ -315,6 +324,7 @@ static int simple_egl_frame_terminate(glvWindow glv_win)
 }
 
 static const struct glv_frame_listener _simple_egl_frame_window_listener = {
+	.start		= simple_egl_frame_start,
 //	.configure	= simple_egl_frame_configure,
 	.terminate	= simple_egl_frame_terminate,
 	.back		= GLV_FRAME_BACK_DRAW_OFF,
@@ -329,9 +339,6 @@ void simple_egl_window_test(glvWindow glv_frame_window)
 
 	if(glvWindow_isAliveWindow(glv_frame_window,simple_egl_frame_id) == GLV_INSTANCE_DEAD){
 		simple_egl_frame_id = glvCreateFrameWindow(glv_frame_window,simple_egl_frame_window_listener,&simple_egl_frame,"simple-egl-frame","simple egl",window_width, winodw_height);
-		glvCreateWindow(simple_egl_frame,simple_egl_sub_window_listener,&simple_egl_window,"simple-egl-sub-window",
-				0, 0, window_width, winodw_height,GLV_WINDOW_ATTR_DEFAULT);
-		glvOnReDraw(simple_egl_window);
 		printf("simple_egl_frame create\n");
 	}else{
 		glvDestroyWindow(&simple_egl_window);

@@ -717,6 +717,7 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 	memcpy(&glv_window->frameInfo,&frameInfo,sizeof(GLV_FRAME_INFO_t));
 
 	if(listener != NULL){
+		glvWindow_setHandler_start((glvWindow)glv_window,listener->start);
 		glvWindow_setHandler_action((glvWindow)glv_window,listener->action);
 		glvWindow_setHandler_configure((glvWindow)glv_window,listener->configure);
 		glvWindow_setHandler_terminate((glvWindow)glv_window,listener->terminate);

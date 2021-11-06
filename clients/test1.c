@@ -413,25 +413,6 @@ int hmi_window_terminate2(glvWindow glv_win)
 	return(GLV_OK);
 }
 
-int sub_frame_configure(glvWindow glv_win,int width, int height)
-{
-	//printf("sub_frame_configure width = %d , height = %d\n",width,height);
-	glvOnReShape(glv_hmi_window4,0,0,width,height);
-	return(GLV_OK);
-}
-
-int sub_frame_terminate(glvWindow glv_win)
-{
-	printf("sub_frame_terminate\n");
-	return(GLV_OK);
-}
-
-static const struct glv_frame_listener _sub_frame_window_listener = {
-//	.configure	= sub_frame_configure,
-	.terminate	= sub_frame_terminate
-};
-static const struct glv_frame_listener *sub_frame_window_listener = &_sub_frame_window_listener;
-
 static const struct glv_window_listener _sub_window_listener = {
 	.init		= hmi_window_init2,
 	.reshape	= hmi_window_reshape2,
@@ -456,6 +437,35 @@ static const struct glv_window_listener _sub_window_menu_listener = {
 };
 static const struct glv_window_listener *sub_window_menu_listener = &_sub_window_menu_listener;
 
+int sub_frame_start(glvWindow glv_frame_window,int width, int height)
+{
+	printf("sub_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
+	glvCreateWindow(glv_frame_window,sub_window_listener,&glv_hmi_window4,"glv_hmi_window4",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glvOnReDraw(glv_hmi_window4);
+	return(GLV_OK);
+}
+
+int sub_frame_configure(glvWindow glv_win,int width, int height)
+{
+	//printf("sub_frame_configure width = %d , height = %d\n",width,height);
+	glvOnReShape(glv_hmi_window4,0,0,width,height);
+	return(GLV_OK);
+}
+
+int sub_frame_terminate(glvWindow glv_win)
+{
+	printf("sub_frame_terminate\n");
+	return(GLV_OK);
+}
+
+static const struct glv_frame_listener _sub_frame_window_listener = {
+	.start		= sub_frame_start,
+//	.configure	= sub_frame_configure,
+	.terminate	= sub_frame_terminate
+};
+static const struct glv_frame_listener *sub_frame_window_listener = &_sub_frame_window_listener;
+
 void part_window_test(glvWindow glv_frame_window)
 {
 	int window_width  = 600;
@@ -463,10 +473,6 @@ void part_window_test(glvWindow glv_frame_window)
 
 	if(glvWindow_isAliveWindow(glv_frame_window,glv_frame_window2_id) == GLV_INSTANCE_DEAD){
 		glv_frame_window2_id = glvCreateFrameWindow(glv_frame_window,sub_frame_window_listener,&glv_frame_window2,"glv_frame_window2","sub window",window_width, winodw_height);
-		//frame_window2_id = glv_getInstanceId(glv_frame_window2);
-		glvCreateWindow(glv_frame_window2,sub_window_listener,&glv_hmi_window4,"glv_hmi_window4",
-				0, 0, window_width, winodw_height,GLV_WINDOW_ATTR_DEFAULT);
-		glvOnReDraw(glv_hmi_window4);
 		printf("glv_frame_window2 create\n");
 	}else{
 		glvDestroyWindow(&glv_hmi_window4);
