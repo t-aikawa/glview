@@ -34,7 +34,7 @@
 #include "weston-client-window.h"
 #include "glview_local.h"
 
-#define GLV_NAME_TEXT	"glview:version 0.1.5(" __DATE__ ")"
+#define GLV_NAME_TEXT	"glview:version 0.1.6(" __DATE__ ")"
 
 #define GLV_OPENGL_ES1_API	(1)
 #define GLV_OPENGL_ES2_API	(2)

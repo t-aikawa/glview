@@ -32,6 +32,8 @@ typedef struct _window_pullDown_menu_user_data{
 	glvSheet		sheet_top_pullDown_menu;
 	glvWiget		wiget_top_pullDown_menu;
 	int				x,y,w,h;
+	int				item_width;
+	int				endDraw;
 } WINDOW_PULLDOWN_MENU_USER_DATA_t;
 
 #define GLV_W_PULL_DOWN_MENU_MAX	(12)
@@ -256,8 +258,10 @@ static int wiget_pullDown_menu_select_text_redraw(glvWindow glv_win,glvSheet she
 
 	if(user_data->item_width < item_width){
 		//printf("glvOnReShape\n");
+		pullDown_menu_window_user_data->endDraw = 2; // endDrawdで２回再描画する  windows11+WSL2+wslgではなぜか、２回描画しないと正しく表示されない
 		user_data->item_width = item_width;
-		glvOnReShape(glv_win,-1,-1,item_width,-1);
+		pullDown_menu_window_user_data->item_width = item_width;
+		//glvOnReShape(glv_win,-1,-1,item_width,-1);
 	}
 
 	//glDisable(GL_BLEND);
@@ -428,6 +432,21 @@ static int pullDown_menu_window_terminate(glvWindow glv_win)
 	return(GLV_OK);
 }
 
+static int pullDown_menu_window_endDraw(glvWindow glv_win,glvTime time)
+{
+	WINDOW_PULLDOWN_MENU_USER_DATA_t *pullDown_menu_window_user_data = glv_getUserData(glv_win);
+
+	//printf("pullDown_menu_window_endDraw\n");
+
+	if(pullDown_menu_window_user_data->endDraw > 0){
+		pullDown_menu_window_user_data->endDraw--;
+		//printf("pullDown_menu_window_endDraw:req endDraw %d\n",pullDown_menu_window_user_data->item_width);
+		glvOnReShape(glv_win,-1,-1,pullDown_menu_window_user_data->item_width,-1);
+	}
+
+	return(GLV_OK);
+}
+
 static const struct glv_window_listener _pullDown_menu_window_listener = {
 	.init		= pullDown_menu_window_init,
 	.reshape	= pullDown_menu_window_reshape,
@@ -437,6 +456,7 @@ static const struct glv_window_listener _pullDown_menu_window_listener = {
 	.gesture	= NULL,
 	.userMsg	= NULL,
 	.terminate	= pullDown_menu_window_terminate,
+	.endDraw	= pullDown_menu_window_endDraw,
 };
 static const struct glv_window_listener *pullDown_menu_window_listener = &_pullDown_menu_window_listener;
 // ==============================================================================================
