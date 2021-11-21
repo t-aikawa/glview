@@ -215,6 +215,7 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
 {
 	struct _glvinput *glv_input = data;
     char *mapstr;
+	int	rc;
 
     //printf("keymap | format:%u, fd:%d, size:%u\n", format, fd, size);
 
@@ -241,7 +242,17 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
     munmap(mapstr, size);
     close(fd);
 
-	glv_ime_startIbus(glv_input);
+	rc = glv_ime_startIbus(glv_input);
+	if(rc == GLV_OK){
+		return;
+	}
+#if 1
+	rc = glv_ime_startFcitx(glv_input);
+	if(rc == GLV_OK){
+		return;
+	}
+#endif
+	printf("glview:ime not connected.\n");
 }
 
 static void keyboard_handle_enter(void *data, struct wl_keyboard *keyboard,
@@ -261,6 +272,23 @@ static void keyboard_handle_leave(void *data, struct wl_keyboard *keyboard,
     //printf("Keyboard lost focus\n");
 }
 
+int glvWiget_setIMECandidatePotition(glvWiget wiget,int candidate_pos_x,int candidate_pos_y)
+{
+    GLV_WIGET_t *glv_wiget=(GLV_WIGET_t*)wiget;
+    GLV_WINDOW_t *glv_window = glv_wiget->glv_sheet->glv_window;
+	int ime_candidate_x,ime_candidate_y;
+	int rc;
+
+	ime_candidate_x = glv_window->absolute_x + glv_wiget->sheet_x + candidate_pos_x;
+	ime_candidate_y = glv_window->absolute_y + glv_wiget->sheet_y + candidate_pos_y;
+
+	if(glv_wiget->glv_dpy->ime_setCandidatePotition != NULL){
+		rc = (glv_wiget->glv_dpy->ime_setCandidatePotition)(ime_candidate_x,ime_candidate_y);
+		return(rc);
+	}
+	return(GLV_OK);
+}
+
 static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
                     uint32_t serial, uint32_t time, uint32_t key,
                     uint32_t state)
@@ -270,6 +298,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 	int text[2];
 	struct _glvinput *glv_input = data;
 	int rc;
+	int ime_rc;
 	glv_input->wl_dpy->serial = serial;
 
     //printf("key | key:%u, %s\n", key,(state == WL_KEYBOARD_KEY_STATE_PRESSED)? "press": "release");
@@ -312,16 +341,20 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 		return;
 	}
 
+	ime_rc = 1;
 	glv_input->im_state = GLV_KEY_STATE_IM_OFF;
-	if(glv_input->im != NULL){
+	if((glv_input->im != NULL) && (glv_input->ime_key_event != NULL)){
 		glv_input->im_state = GLV_KEY_STATE_IM_OFF;
 		if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
-			glv_ime_key_event(glv_input,key + 8,sym,0,GLV_KeyPress);
+			ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyPress);
 		}else if(state == WL_KEYBOARD_KEY_STATE_RELEASED){
-			glv_ime_key_event(glv_input,key + 8,sym,0,GLV_KeyRelease);
+			ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyRelease);
 		}
 	}
 	if(glv_input->im_state != GLV_KEY_STATE_IM_OFF){
+		return;
+	}
+	if(ime_rc == 0){
 		return;
 	}
 
@@ -447,7 +480,9 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 		printf("\n");
 	}
 
-	glv_ime_key_modifiers(glv_input,mods);
+	if(glv_input->ime_key_modifiers != NULL){
+		(glv_input->ime_key_modifiers)(glv_input,mods);
+	}
 }
 
 /* キーリピートの情報 */
@@ -1010,8 +1045,9 @@ static void xdg_wm_surface_handle_configure(void *data,
 
 	xdg_surface_ack_configure(surface, serial);
 
-	//printf("********************* xdg_wm_surface_handle_configure name:%s\n",glv_window->name);
+	//printf("********************* xdg_wm_surface_handle_configure name:%s , flag_configure = %d\n",glv_window->name,glv_window->flag_configure);
 
+	pthread_mutex_lock(&glv_window->serialize_mutex);				// window serialize_mutex
 	if(glv_window->flag_configure == 0){
 		glv_window->flag_configure = 1;
 		//printf("********************* start xdg_wm_surface_handle_configure name:%s\n",glv_window->name);
@@ -1024,6 +1060,7 @@ static void xdg_wm_surface_handle_configure(void *data,
 			}
 		}
 	}
+	pthread_mutex_unlock(&glv_window->serialize_mutex);				// window serialize_mutex
 }
 
 static const struct xdg_surface_listener xdg_wm_surface_listener = {
@@ -1040,7 +1077,7 @@ static void _Window_configure(GLV_WINDOW_t *glv_frame,int width,int height)
 	if(height < MIN_WINDOW_SIZE) height = MIN_WINDOW_SIZE;
 
 	//サイズが変わったら更新
-
+	pthread_mutex_lock(&glv_frame->serialize_mutex);				// window serialize_mutex
 	if((width != glv_frame->frameInfo.frame_width) || (height != glv_frame->frameInfo.frame_height)){
 		glv_frame->frameInfo.frame_width  = width;
 		glv_frame->frameInfo.frame_height = height;
@@ -1053,6 +1090,7 @@ static void _Window_configure(GLV_WINDOW_t *glv_frame,int width,int height)
 			_glv_window_list_on_reshape(glv_frame->glv_dpy,glv_frame,glv_frame->frameInfo.inner_width,glv_frame->frameInfo.inner_height);
 		}
 	}
+	pthread_mutex_unlock(&glv_frame->serialize_mutex);				// window serialize_mutex
 }
 
 static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *toplevel,
@@ -1682,6 +1720,9 @@ void _glvCloseNativeDisplay(GLV_DISPLAY_t *glv_dpy)
 GLV_WINDOW_t *_glvAllocWindowResource(GLV_DISPLAY_t *glv_dpy,char *name)
 {
 	GLV_WINDOW_t *glv_window;
+#ifdef GLV_PTHREAD_MUTEX_RECURSIVE
+	pthread_mutexattr_t attr;
+#endif
 
 	glv_window = (GLV_WINDOW_t *)malloc(sizeof(GLV_WINDOW_t));
 	if(!glv_window){
@@ -1696,12 +1737,19 @@ GLV_WINDOW_t *_glvAllocWindowResource(GLV_DISPLAY_t *glv_dpy,char *name)
 	glv_window->name		= name;
 
 #ifdef GLV_PTHREAD_MUTEX_RECURSIVE
-	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&glv_window->window_mutex,&attr);	// window
 #else
 	pthread_mutex_init(&glv_window->window_mutex,NULL);		// window
+#endif
+
+#ifdef GLV_PTHREAD_MUTEX_RECURSIVE
+	pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&glv_window->serialize_mutex,&attr);		// window
+#else
+	pthread_mutex_init(&glv_window->serialize_mutex,NULL);		// window
 #endif
 
 	sem_init(&glv_window->initSync, 0, 0);
@@ -1821,7 +1869,7 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 		// --------------------------------------------------------------------------------------
 	}
 
-	wl_surface_commit(w->surface);
+	//wl_surface_commit(w->surface);
 
 	glv_window->egl_window	= native;
 	glv_window->windowType	= windowType;
@@ -1932,6 +1980,7 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 		}
 		printf("\n");
 	}
+	wl_surface_commit(w->surface);
 	return(GLV_OK);
 }
 
@@ -2240,7 +2289,7 @@ void glvSwapBuffers(glvWindow glv_win)
 	pthread_mutex_unlock(&glv_window->window_mutex);		// window
 
 	eglSwapBuffers(glv_window->glv_dpy->egl_dpy, glv_window->ctx.egl_surf);
-	//printf("glvSwapBuffers: eglSwapBuffers %s\n",glv_window->name);
+	//printf("glvSwapBuffers: eglSwapBuffers %s , draw__run_count = %d\n",glv_window->name,glv_window->draw__run_count);
 	// -------------------------------------------------------------------------
 	// surfaceを作成した最初の描画では、そのsurfaceが表示されない場合がある為、
 	// surfaceの最初の描画(glv_window->drawCount == 1))後に、
@@ -2286,6 +2335,7 @@ int _glv_destroyAllWindow(GLV_DISPLAY_t *glv_dpy)
 		glvTerminateThreadSurfaceView(glv_all_window);
 		_glvDestroyWindow(glv_all_window);
 		pthread_mutex_destroy(&glv_all_window->window_mutex);
+		pthread_mutex_destroy(&glv_all_window->serialize_mutex);
 		GLV_IF_DEBUG_INSTANCE printf(GLV_DEBUG_INSTANCE_COLOR"_glv_destroyAllWindow: destroy [%s]\n"GLV_DEBUG_END_COLOR,glv_all_window->name);
 		free(glv_all_window);
 	}

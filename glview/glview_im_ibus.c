@@ -166,7 +166,7 @@ static void remove_event_source(struct _glvinput *glv_input)
 	ibus_bus_fd = -1;
 }
 
-void glv_ime_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask)
+static void glv_ime_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask)
 {
 	im_ibus_t *ibus;
 	if(glv_input->im == NULL){
@@ -199,7 +199,7 @@ void glv_ime_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask)
         ibus->modifiers |= IBUS_META_MASK;
 }
 
-int glv_ime_key_event(struct _glvinput *glv_input,int keycode, int ksym, int state_,int type)
+static int glv_ime_key_event(struct _glvinput *glv_input,int keycode, int ksym, int state_,int type)
 {
 	im_ibus_t *ibus;
 	if(glv_input->im == NULL){
@@ -306,7 +306,18 @@ static void disconnected(IBusBus *bus, gpointer data)
 	}
 }
 
-void glv_ime_startIbus(struct _glvinput *glv_input)
+static int glv_ime_setIMECandidatePotition(int candidate_pos_x,int candidate_pos_y)
+{
+	if(ibus_preedit == NULL){
+		return(GLV_ERROR);
+	}
+
+	ibus_input_context_set_cursor_location_relative(ibus_preedit->context,candidate_pos_x,candidate_pos_y, 0, 0);
+
+	return(GLV_OK);
+}
+
+int glv_ime_startIbus(struct _glvinput *glv_input)
 {
 	static int is_init=0;
 	im_ibus_t *ibus = NULL;
@@ -321,12 +332,12 @@ void glv_ime_startIbus(struct _glvinput *glv_input)
 
 	if(!ibus_bus_is_connected(ibus_bus)) {
 		printf("glv_ime_startIbus: IBus daemon is not found.\n");
-		return;
+		return(GLV_ERROR);
 	}
 
 	if(!add_event_source(glv_input)) {
 		printf("glv_ime_startIbus: add_event_source error.\n");
-		return;
+		return(GLV_ERROR);
 	}
 
 	g_signal_connect(ibus_bus, "connected", G_CALLBACK(connected), glv_input);
@@ -334,24 +345,30 @@ void glv_ime_startIbus(struct _glvinput *glv_input)
 
 	if(!(ibus = calloc(1, sizeof(im_ibus_t)))) {
 		printf("glv_ime_startIbus: calloc failed.\n");
-		return;
+		return(GLV_ERROR);
 	}
     char *engine = "(null)";
 
 	if(!(ibus->context = context_new(glv_input,ibus, engine))) {
 		printf("glv_ime_startIbus: context_new failed.\n");
-		return;
+		return(GLV_ERROR);
 	}
 	ibus->is_enabled = FALSE;
 
 	glv_input->im = ibus;
+	glv_input->ime_key_event = glv_ime_key_event;
+	glv_input->ime_key_modifiers = glv_ime_key_modifiers;
+	glv_input->glv_dpy->ime_setCandidatePotition = glv_ime_setIMECandidatePotition;
 
  	glv_list_insert_head(ibus_list, ibus);
 
 	GLV_IF_DEBUG_IME_INPUT printf("glv_ime_startIbus:start.\n");
+
+	return(GLV_OK);
 }
 
-int glvWiget_setIMECandidatePotition(glvWiget wiget,int candidate_pos_x,int candidate_pos_y)
+#if 0
+int ibus_glvWiget_setIMECandidatePotition(glvWiget wiget,int candidate_pos_x,int candidate_pos_y)
 {
     GLV_WIGET_t *glv_wiget=(GLV_WIGET_t*)wiget;
     GLV_WINDOW_t *glv_window = glv_wiget->glv_sheet->glv_window;
@@ -368,3 +385,4 @@ int glvWiget_setIMECandidatePotition(glvWiget wiget,int candidate_pos_x,int cand
 
 	return(GLV_OK);
 }
+#endif

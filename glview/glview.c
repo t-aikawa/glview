@@ -34,7 +34,7 @@
 #include "weston-client-window.h"
 #include "glview_local.h"
 
-#define GLV_NAME_TEXT	"glview:version 0.1.6(" __DATE__ ")"
+#define GLV_NAME_TEXT	"glview:version 0.1.7(" __DATE__ ")"
 
 #define GLV_OPENGL_ES1_API	(1)
 #define GLV_OPENGL_ES2_API	(2)
@@ -941,7 +941,7 @@ void *glvExecMsg(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 					}
 				}
 				_glv_sheet_userMsg_cb(glv_window,kind,data);
-				if(data != NULL) free(data);
+				//if(data != NULL) free(data);
 				//_usr_msg_ok_receive_count++;
 			}
 			break;
@@ -1018,8 +1018,8 @@ void *glvExecMsg(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 			//printf("[%s] GLV_ON_KEY_INPUT\n",glv_window->name);
 			{
 				_glv_wiget_key_input_cb(glv_window,rmsg->data[2],rmsg->data[3],rmsg->data[4],rmsg->data[5],rmsg->data[6],(int *)rmsg->data[7],(uint8_t*)rmsg->data[8],rmsg->data[9]);
-				if(rmsg->data[7] != 0) free((void *)rmsg->data[7]);
-				if(rmsg->data[8] != 0) free((void *)rmsg->data[8]);
+				//if(rmsg->data[7] != 0) free((void *)rmsg->data[7]);
+				//if(rmsg->data[8] != 0) free((void *)rmsg->data[8]);
 			}
 			break;
 		case GLV_ON_FOCUS:
@@ -1068,28 +1068,35 @@ int glvMsgHandler(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 			return(rc);
 		}
 	}
-	glvSelectDrawingWindow((glvWindow)target_window);
 
-	target_window->reqSwapBuffersFlag = 0;
+	if(target_window->instance.alive == GLV_INSTANCE_ALIVE){
+		glvSelectDrawingWindow((glvWindow)target_window);
+		target_window->reqSwapBuffersFlag = 0;
 
-	glvExecMsg(target_window,rmsg);
+		glvExecMsg(target_window,rmsg);
+		if(target_window->reqSwapBuffersFlag == 1){
+			target_window->reqSwapBuffersFlag = 0;
+			glvSwapBuffers(target_window);
+		}
+	}
 
 	switch(rmsg->data[0]){
 		case GLV_ON_REDRAW:
 			target_window->reqSwapBuffersFlag = 1;	// REDRAWは、必ず描画するので強制SwapBuffersを実行する
 			break;
 		case GLV_ON_USER_MSG:
+			if(rmsg->data[3] != 0) free((void *)rmsg->data[3]);
 			_usr_msg_ok_receive_count++;
+			break;
+		case GLV_ON_KEY_INPUT:
+			if(rmsg->data[7] != 0) free((void *)rmsg->data[7]);
+			if(rmsg->data[8] != 0) free((void *)rmsg->data[8]);
 			break;
 		case GLV_ON_TERMINATE:
 			rc = 0;
 			break;
 		default:
 			break;
-	}
-	if(target_window->reqSwapBuffersFlag == 1){
-		target_window->reqSwapBuffersFlag = 0;
-		glvSwapBuffers(target_window);
 	}
 	return(rc);
 }

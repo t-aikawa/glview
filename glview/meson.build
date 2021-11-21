@@ -11,7 +11,8 @@ wayland_cursor = dependency('wayland-cursor')
 wayland_egl = dependency('wayland-egl')
 glesv2 = dependency('glesv2')
 xkbcommon = dependency('xkbcommon')
-ibus = dependency('ibus-1.0')
+im_ibus = dependency('ibus-1.0')
+im_fcitx = dependency('fcitx-gclient')
 dep_libm = cc.find_library('m')
 
 scanner = dependency('wayland-scanner')
@@ -48,7 +49,8 @@ glview_lib = library(
 	'glview_font.c',
 	'glview_frame.c',
 	'glview_gl.c',
-	'glview_ibus.c',
+	'glview_im_ibus.c',
+	'glview_im_fcitx.c',
 	'glview_part001.c',
 	'glview_part002.c',
 	'glview_part003.c',
@@ -64,7 +66,7 @@ glview_lib = library(
 	],
 	include_directories: includes,
 	link_with: [es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glib_2_0,gthread_2_0,gobject_2_0, freetype2,egl,wayland_client,wayland_cursor,wayland_egl, glesv2,xkbcommon,ibus,dep_libm])
+	dependencies : [glib_2_0,gthread_2_0,gobject_2_0, freetype2,egl,wayland_client,wayland_cursor,wayland_egl, glesv2,xkbcommon,im_ibus,im_fcitx,dep_libm])
 	
 	
 	

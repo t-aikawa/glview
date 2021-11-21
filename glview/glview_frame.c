@@ -709,6 +709,8 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 	frameInfo.frame_width			= frameInfo.inner_width + frameInfo.left_size + frameInfo.right_size;
 	frameInfo.frame_height			= frameInfo.inner_height + frameInfo.top_size + frameInfo.bottom_size;
 
+	pthread_mutex_lock(&glv_window->serialize_mutex);				// window serialize_mutex
+
 	rc = _glvCreateWindow(glv_window,name,
 					GLV_TYPE_THREAD_FRAME,title, 0, 0, frameInfo.frame_width, frameInfo.frame_height,glv_win_parent,GLV_WINDOW_ATTR_DEFAULT);
 	if(rc != GLV_OK){
@@ -737,6 +739,8 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 	glvCreateThreadSurfaceView((glvWindow)glv_window);
 
 	glvOnReDraw(glv_window);
+
+	pthread_mutex_unlock(&glv_window->serialize_mutex);				// window serialize_mutex
 
 	return(glv_window->instance.Id);
 }

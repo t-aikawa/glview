@@ -163,6 +163,7 @@ typedef struct _glv_display {
 	glvInstanceId			kb_input_sheetId;
 	glvInstanceId			kb_input_wigetId;
 	int						ins_mode;
+	int						(*ime_setCandidatePotition)(int candidate_pos_x,int candidate_pos_y);
 } GLV_DISPLAY_t;
 
 typedef struct _wlwindow {
@@ -233,6 +234,7 @@ typedef struct _glv_window {
 	/* --------------------------- */
 	sem_t				initSync;
 	pthread_mutex_t		window_mutex;
+	pthread_mutex_t		serialize_mutex;
 	struct wl_list link;
 }GLV_WINDOW_t;
 
@@ -309,6 +311,9 @@ struct _glvinput
 	// ------------------------------------
 	void				*im;
 	int					im_state;
+	int					(*ime_key_event)(struct _glvinput *glv_input,int keycode, int ksym, int state_,int type);
+	void				(*ime_key_modifiers)(struct _glvinput *glv_input,xkb_mod_mask_t mask);
+	//int					(*ime_setCandidatePotition)(int candidate_pos_x,int candidate_pos_y);
 	// ------------------------------------
 	struct wl_surface	*pointer_surface;
 	glvInstanceId		pointer_enter_windowId;
@@ -406,9 +411,12 @@ int _glvGcGarbageBox(void);
 GLV_WINDOW_t *_glvGetWindow(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId);
 
 // ibus
-void glv_ime_startIbus(struct _glvinput *glv_input);
-void glv_ime_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask);
-int glv_ime_key_event(struct _glvinput *glv_input,int keycode, int ksym, int state_,int type);
+int glv_ime_startIbus(struct _glvinput *glv_input);
+//void glv_ime_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask);
+//int glv_ime_key_event(struct _glvinput *glv_input,int keycode, int ksym, int state_,int type);
+
+// fcitx
+int glv_ime_startFcitx(struct _glvinput *glv_input);
 
 extern GLV_GARBAGE_BOX_t	_glv_garbage_box;
 extern glvInstanceId _glv_instance_Id;
