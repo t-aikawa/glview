@@ -46,6 +46,8 @@
 
 typedef struct _sheet_user_data{
 	glvWiget wiget_button_close;
+	glvWiget wiget_button_maximize;
+	glvWiget wiget_button_minimize;
 	glvWiget wiget_button_pullDownMenu;
 	glvWiget wiget_button_cmdMenu;
 } SHEET_USER_DATA_t;
@@ -102,6 +104,124 @@ static int button_close_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
 	return(GLV_OK);
 }
 
+static int button_maximize_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
+{
+	GLV_WIGET_GEOMETRY_t	geometry;
+	int		kind;
+	float x,y,w,h;
+	GLV_WIGET_STATUS_t	wigetStatus;
+
+	glvSheet_getSelectWigetStatus(sheet,&wigetStatus);
+	glvWiget_getWigetGeometry(wiget,&geometry);
+
+	w		= geometry.width;
+	h		= geometry.height;
+	x		= geometry.x;
+	y		= geometry.y;
+
+	glPushMatrix();
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//glColor4f(0.0, 0.0, 0.0, 1.0);
+	//glvGl_drawRectangle(x,y,w,h);
+
+	kind =  glvWiget_kindSelectWigetStatus(wiget,&wigetStatus);
+
+	switch(kind){
+		case GLV_WIGET_STATUS_FOCUS:
+			glColor4f(1.0, 0.0, 0.0, 1.0);
+			glvGl_drawRectangle(x,y,w,h);
+			break;
+		case GLV_WIGET_STATUS_PRESS:
+			glColor4f(0.0, 1.0, 0.0, 1.0);
+			glvGl_drawRectangle(x,y,w,h);
+			break;
+		case GLV_WIGET_STATUS_RELEASE:
+		default:
+			//glColor4f(0.5, 0.5, 0.5, 1.0);
+			//glvGl_drawRectangle(x,y,w,h);
+			break;
+	}
+
+	{
+		int offset = 2;
+		GLV_T_POINT_t point[5];
+		glColor4f(0.5, 0.5, 0.5, 1.0);
+
+		point[0].x = x + offset;
+		point[0].y = y + offset;
+		point[1].x = point[0].x;
+		point[1].y = point[0].y + h - offset * 2;
+
+		point[2].x = point[0].x + w - offset * 2;
+		point[2].y = point[1].y;
+		point[3].x = point[2].x;
+		point[3].y = point[0].y;
+		point[4].x = point[0].x;
+		point[4].y = point[0].y;
+
+		glvGl_drawLines(point,5,2);
+
+	}
+
+	//printf("button_close_redraw\n");
+	//glDisable(GL_BLEND);
+	glPopMatrix();
+
+	return(GLV_OK);
+}
+
+static int button_minimize_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
+{
+	GLV_WIGET_GEOMETRY_t	geometry;
+	int		kind;
+	float x,y,w,h;
+	GLV_WIGET_STATUS_t	wigetStatus;
+
+	glvSheet_getSelectWigetStatus(sheet,&wigetStatus);
+	glvWiget_getWigetGeometry(wiget,&geometry);
+
+	w		= geometry.width;
+	h		= geometry.height;
+	x		= geometry.x;
+	y		= geometry.y;
+
+	glPushMatrix();
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//glColor4f(0.0, 0.0, 0.0, 1.0);
+	//glvGl_drawRectangle(x,y,w,h);
+
+	kind =  glvWiget_kindSelectWigetStatus(wiget,&wigetStatus);
+
+	switch(kind){
+		case GLV_WIGET_STATUS_FOCUS:
+			glColor4f(1.0, 0.0, 0.0, 1.0);
+			glvGl_drawRectangle(x,y,w,h);
+			break;
+		case GLV_WIGET_STATUS_PRESS:
+			glColor4f(0.0, 1.0, 0.0, 1.0);
+			glvGl_drawRectangle(x,y,w,h);
+			break;
+		case GLV_WIGET_STATUS_RELEASE:
+		default:
+			//glColor4f(0.5, 0.5, 0.5, 1.0);
+			//glvGl_drawRectangle(x,y,w,h);
+			break;
+	}
+
+	glColor4f(0.5, 0.5, 0.5, 1.0);
+	glvGl_drawRectangle(x+2,y+w-6,w-4,4);
+
+	//printf("button_close_redraw\n");
+	//glDisable(GL_BLEND);
+	glPopMatrix();
+
+	return(GLV_OK);
+}
+
 static int frame_sheet_action(glvWindow glv_win,glvSheet sheet,int action,glvInstanceId selectId)
 {
 	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
@@ -137,6 +257,36 @@ static int frame_sheet_action(glvWindow glv_win,glvSheet sheet,int action,glvIns
 			glvDestroyWindow(&glv_win);
 #endif
 		}
+	}else if(selectId == glv_getInstanceId(user_data->wiget_button_maximize)){
+		// window maximize
+		if(glv_window->wl_window.xdg_wm_toplevel){
+			if(glv_window->wl_window.toplevel_maximized == 1){
+				glv_window->wl_window.toplevel_maximized = 0;
+				xdg_toplevel_unset_maximized(glv_window->wl_window.xdg_wm_toplevel);
+			}else{
+				glv_window->wl_window.toplevel_maximized = 1;
+				xdg_toplevel_set_maximized(glv_window->wl_window.xdg_wm_toplevel);
+			}
+		}else if(glv_window->wl_window.zxdgV6_toplevel){
+			if(glv_window->wl_window.toplevel_maximized == 1){
+				glv_window->wl_window.toplevel_maximized = 0;
+				zxdg_toplevel_v6_unset_maximized(glv_window->wl_window.zxdgV6_toplevel);
+			}else{
+				glv_window->wl_window.toplevel_maximized = 1;
+				zxdg_toplevel_v6_set_maximized(glv_window->wl_window.zxdgV6_toplevel);
+			}
+		}else if(glv_window->wl_window.wl_shell_surface){
+			// nothing
+		}
+	}else if(selectId == glv_getInstanceId(user_data->wiget_button_minimize)){
+		// window minimize
+		if(glv_window->wl_window.xdg_wm_toplevel){
+			xdg_toplevel_set_minimized(glv_window->wl_window.xdg_wm_toplevel);
+		}else if(glv_window->wl_window.zxdgV6_toplevel){
+			zxdg_toplevel_v6_set_minimized(glv_window->wl_window.zxdgV6_toplevel);
+		}else if(glv_window->wl_window.wl_shell_surface){
+			// nothing
+		}
 	}else if(selectId == glv_getInstanceId(user_data->wiget_button_pullDownMenu)){
 		int functionId;
 		glv_getValue(user_data->wiget_button_pullDownMenu,"select function id","i",&functionId);
@@ -157,6 +307,7 @@ static int frame_sheet_action(glvWindow glv_win,glvSheet sheet,int action,glvIns
 
 static void frame_init_params(glvSheet sheet,int WinWidth,int WinHeight)
 {
+	int prev_x;
 	GLV_WIGET_GEOMETRY_t	geometry;
 	SHEET_USER_DATA_t *user_data = glv_getUserData(sheet);
 	GLV_WINDOW_t	*glv_window = ((GLV_SHEET_t *)sheet)->glv_window;
@@ -165,8 +316,28 @@ static void frame_init_params(glvSheet sheet,int WinWidth,int WinHeight)
 	geometry.width	= 16;
 	geometry.height	= 16;
 	geometry.x	= WinWidth  - geometry.width - FRAME_SIZE - FREAME_SHADOW_SIZE;
+	prev_x = geometry.x;
 	geometry.y	= FRAME_SIZE;
 	glvWiget_setWigetGeometry(user_data->wiget_button_close,&geometry);
+
+	if(user_data->wiget_button_maximize != NULL){
+		geometry.scale = 1.0;
+		geometry.width	= 16;
+		geometry.height	= 16;
+		geometry.x	= prev_x - geometry.width - 8;
+		prev_x = geometry.x;
+		geometry.y	= FRAME_SIZE;
+		glvWiget_setWigetGeometry(user_data->wiget_button_maximize,&geometry);
+	}
+
+	if(user_data->wiget_button_minimize != NULL){
+		geometry.scale = 1.0;
+		geometry.width	= 16;
+		geometry.height	= 16;
+		geometry.x	= prev_x - geometry.width - 8;
+		geometry.y	= FRAME_SIZE;
+		glvWiget_setWigetGeometry(user_data->wiget_button_minimize,&geometry);
+	}
 
 	if(user_data->wiget_button_pullDownMenu != NULL){
 		geometry.scale = 1.0;
@@ -207,6 +378,7 @@ static int frame_sheet_update(glvWindow glv_win,glvSheet sheet,int drawStat)
 
 static int frame_sheet_init(glvWindow glv_win,glvSheet sheet,int window_width, int window_height)
 {
+	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
 	glv_allocUserData(sheet,sizeof(SHEET_USER_DATA_t));
 	SHEET_USER_DATA_t *user_data = glv_getUserData(sheet);
 
@@ -215,6 +387,20 @@ static int frame_sheet_init(glvWindow glv_win,glvSheet sheet,int window_width, i
 		glvWiget_setHandler_redraw(user_data->wiget_button_close,button_close_redraw);
 		glvWiget_setHandler_terminate(user_data->wiget_button_close,NULL);
 	glvWiget_setWigetVisible(user_data->wiget_button_close,GLV_VISIBLE);
+
+	if(glv_window->parent == NULL){
+		user_data->wiget_button_maximize	= glvCreateWiget(sheet,NULL,GLV_WIGET_ATTR_PUSH_ACTION | GLV_WIGET_ATTR_POINTER_FOCUS);
+			glvWiget_setHandler_init(user_data->wiget_button_maximize,NULL);
+			glvWiget_setHandler_redraw(user_data->wiget_button_maximize,button_maximize_redraw);
+			glvWiget_setHandler_terminate(user_data->wiget_button_maximize,NULL);
+		glvWiget_setWigetVisible(user_data->wiget_button_maximize,GLV_VISIBLE);
+
+		user_data->wiget_button_minimize	= glvCreateWiget(sheet,NULL,GLV_WIGET_ATTR_PUSH_ACTION | GLV_WIGET_ATTR_POINTER_FOCUS);
+			glvWiget_setHandler_init(user_data->wiget_button_minimize,NULL);
+			glvWiget_setHandler_redraw(user_data->wiget_button_minimize,button_minimize_redraw);
+			glvWiget_setHandler_terminate(user_data->wiget_button_minimize,NULL);
+		glvWiget_setWigetVisible(user_data->wiget_button_minimize,GLV_VISIBLE);
+	}
 
 	if(glv_isPullDownMenu(glv_win) == 1){
 		user_data->wiget_button_pullDownMenu = glvCreateWiget(sheet,wiget_pullDownMenu_listener,GLV_WIGET_ATTR_NO_OPTIONS);

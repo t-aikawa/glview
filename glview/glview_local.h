@@ -134,6 +134,7 @@ typedef struct _wldisplay {
 	struct wl_cursor_theme	*cursor_theme;
 	struct wl_cursor		**cursors;
 	struct wl_list			input_list;
+	struct wl_list			output_list;
 	uint32_t				serial;
 	uint32_t				data_device_manager_version;
 } WL_DISPLAY_t;
@@ -179,7 +180,9 @@ typedef struct _wlwindow {
 	struct wl_shell_surface	*wl_shell_surface;	// interface:wl_shell
 	struct ivi_surface		*ivi_surface;		// interface:ivi_application
 	struct wl_callback		*frame_cb;
+	int32_t					buffer_scale;
 	uint32_t				last_time;
+	int32_t					toplevel_maximized;
 } WL_WINDOW_t;
 
 typedef struct _glvContext {
@@ -330,6 +333,19 @@ struct _glvinput
 	glvInstanceId		pointer_focus_windowId;
 	struct wl_list link;
 //}GLV_INPUT_t;
+};
+
+struct _glvoutput {
+	GLV_DISPLAY_t	*glv_dpy;
+	struct wl_output *output;
+	uint32_t id;
+	int32_t x;
+	int32_t y;
+	int32_t width;
+	int32_t height;
+	struct wl_list link;
+	int transform;
+	int scale;
 };
 
 typedef struct _glv_garbage_box {

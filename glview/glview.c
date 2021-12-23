@@ -34,7 +34,7 @@
 #include "weston-client-window.h"
 #include "glview_local.h"
 
-#define GLV_NAME_TEXT	"glview:version 0.1.7(" __DATE__ ")"
+#define GLV_NAME_TEXT	"glview:version 0.1.9(" __DATE__ ")"
 
 #define GLV_OPENGL_ES1_API	(1)
 #define GLV_OPENGL_ES2_API	(2)
@@ -49,6 +49,7 @@ static int _usr_msg_ng_send_count=0;
 static int _glv_debug_flag = GLV_DEBUG_OFF;
 
 static int _glv_debug_flag_validity_list[] = {
+	GLV_DEBUG_VERSION,
 	//GLV_DEBUG_MSG,
 	GLV_DEBUG_INSTANCE,
 	//GLV_DEBUG_KB_INPUT,
@@ -159,8 +160,33 @@ glvDisplay glvOpenDisplay(char *dpyName)
 		EGL_NONE
 	};
 
-	fprintf(stdout,"--------------------------------------------------------------------------\n");
-	fprintf(stdout,"%s\n",GLV_NAME_TEXT);
+	// 環境変数によるデバック設定
+	// ex.
+	// GLVIEW_DEBUG=1 ./a.out		_glv_debug_flag_validity_list に設定されているglview内のデバック情報を出力する
+	// GLVIEW_DEBUG=2 ./a.out		glview内の全てのデバック情報を出力する
+	// GLVIEW_WAYLAND=1 ./a.out		waylandのデバック情報(WAYLAND_DEBUG=1)を出力する
+	// GLVIEW_WAYLAND=1 GLVIEW_DEBUG=2 ./a.out		全てのデバック情報を出力する	
+	{
+		char *env;
+		env = getenv("GLVIEW_DEBUG");
+		if(env != NULL){
+			if(strcmp(env, "1") == 0) {
+				glvSetDebugFlag(GLV_DEBUG_ON);
+			}else if(strcmp(env, "2") == 0) {
+				_glv_debug_flag = 0x7fffffff;
+			}
+		}
+		env = getenv("GLVIEW_WAYLAND");
+		if(env != NULL){
+			if(strcmp(env, "1") == 0) {
+				setenv("WAYLAND_DEBUG","1",0);
+				_glv_debug_flag |= GLV_DEBUG_VERSION;
+			}
+		}
+	}
+
+	GLV_IF_DEBUG_VERSION printf("--------------------------------------------------------------------------\n");
+	GLV_IF_DEBUG_VERSION printf("%s\n",GLV_NAME_TEXT);
 
 	glvGl_thread_safe_init();
 	glvFont_thread_safe_init();
@@ -285,10 +311,10 @@ glvDisplay glvOpenDisplay(char *dpyName)
 	es1emu_Init();
 #endif
 
-	fprintf(stdout,		"glview:GL_RENDERER   = %s\n", (char *) glGetString(GL_RENDERER));
-	fprintf(stdout,		"glview:GL_VERSION    = %s\n", (char *) glGetString(GL_VERSION));
-	//fprintf(stdout,	"glview:GL_VENDOR     = %s\n", (char *) glGetString(GL_VENDOR));
-	//fprintf(stdout,	"glview:GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
+	GLV_IF_DEBUG_VERSION printf("glview:GL_RENDERER   = %s\n", (char *) glGetString(GL_RENDERER));
+	GLV_IF_DEBUG_VERSION printf("glview:GL_VERSION    = %s\n", (char *) glGetString(GL_VERSION));
+	//printf("glview:GL_VENDOR     = %s\n", (char *) glGetString(GL_VENDOR));
+	//printf("glview:GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
 
 	weston_client_window__display_create(glv_dpy);
 

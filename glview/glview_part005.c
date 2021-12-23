@@ -127,6 +127,14 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 
 	glv_getValue(glv_win,"cmdMenu number"	,"i",&menuNumber,&next);
 
+	// printf("wiget_cmd_menu_redraw: menuNumber = %d\n",menuNumber);
+
+	// 	メニューが選択できなかったときは、直前のメニューを表示する
+	// append 2021/12/20 by T.Aikawa
+	if(menuNumber == -1){
+		menuNumber = user_data->menuNumber;
+	}
+
 	int focus	= user_data->focus;
 
 	if(user_data->menuNumber != menuNumber){

@@ -141,6 +141,24 @@ void _glvResizeWindow(GLV_WINDOW_t *glv_window,int x,int y,int width,int height)
 	glv_window->frameInfo.inner_height = height - glv_window->frameInfo.top_size  - glv_window->frameInfo.bottom_size;
 
 	wl_egl_window_resize(glv_window->egl_window,width,height,0,0);
+
+#if 0
+	if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
+		if(glv_window->wl_window.xdg_wm_toplevel){
+			xdg_surface_set_window_geometry(glv_window->wl_window.xdg_wm_surface,
+				glv_window->frameInfo.left_shadow_size,
+				glv_window->frameInfo.top_shadow_size,
+#if 0
+				glv_window->frameInfo.frame_width,
+				glv_window->frameInfo.frame_height);
+#else
+				glv_window->frameInfo.frame_width  - glv_window->frameInfo.left_shadow_size - glv_window->frameInfo.right_shadow_size,
+				glv_window->frameInfo.frame_height - glv_window->frameInfo.top_shadow_size  - glv_window->frameInfo.bottom_shadow_size);
+#endif
+		}
+	}
+#endif
+
 	if(glv_window->windowType != GLV_TYPE_THREAD_FRAME){
 		wl_subsurface_set_position(glv_window->wl_window.subsurface,(x + glv_window->parent->frameInfo.left_size),(y + glv_window->parent->frameInfo.top_size));
 		wl_surface_commit(glv_window->wl_window.surface);
@@ -648,6 +666,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
 	struct _glvinput *glv_input = data;
 	GLV_WINDOW_t	*glv_window;
 	WL_WINDOW_t	*w;
+	glvInstanceId	wigetId;
 
 	glv_input->wl_dpy->serial = serial;
     //printf("Pointer button\n");
@@ -666,7 +685,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
     		rc = 0;
     		if(glv_input_func.touch_down != NULL) rc = (*glv_input_func.touch_down)(glv_input->pointer_sx,glv_input->pointer_sy);
 			if(glv_window != NULL){
-				glvInstanceId	wigetId;
+				// glvInstanceId	wigetId;
 				wigetId = _glv_wiget_check_wiget_area(glv_window,glv_input->pointer_sx,glv_input->pointer_sy,GLV_MOUSE_EVENT_PRESS);
 				glv_input->select_wigetId = wigetId;
 				// printf("wigetId = %ld\n",wigetId);
@@ -692,7 +711,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
     		rc = 0;
     		if(glv_input_func.touch_up != NULL) rc = (*glv_input_func.touch_up)(glv_input->pointer_sx,glv_input->pointer_sy);
 			if(glv_window != NULL){
-				glvInstanceId	wigetId;
+				// glvInstanceId	wigetId;
 				wigetId = _glv_wiget_check_wiget_area(glv_window,glv_input->pointer_sx,glv_input->pointer_sy,GLV_MOUSE_EVENT_RELEASE);
 				//printf("wigetId = %ld\n",wigetId);
 				if((glv_input->select_wigetId != 0) || (wigetId != 0)){
@@ -763,6 +782,10 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
     if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
         if(button == BTN_LEFT && state == WL_POINTER_BUTTON_STATE_PRESSED){
             w = &glv_window->wl_window;
+#if 1
+			if(wigetId != 0){
+			}else 
+#endif
             if((glv_input->pointer_sy > (glv_window->myFrame->frameInfo.top_shadow_size + glv_window->myFrame->frameInfo.top_edge_size)) &&
                 (glv_input->pointer_sy < (glv_window->myFrame->frameInfo.top_name_size + glv_window->myFrame->frameInfo.top_shadow_size + glv_window->myFrame->frameInfo.top_edge_size - 2)) &&
                 (glv_input->pointer_sx > glv_window->myFrame->frameInfo.left_size ) &&
@@ -1506,6 +1529,85 @@ static void display_add_input(GLV_DISPLAY_t *glv_display, struct wl_registry *re
 	glv_display->ins_mode = 1;
 }
 
+static void display_handle_geometry(void *data,
+			struct wl_output *wl_output,
+			int x, int y,
+			int physical_width,
+			int physical_height,
+			int subpixel,
+			const char *make,
+			const char *model,
+			int transform)
+{
+	struct _glvoutput *output = data;
+
+    GLV_IF_DEBUG_VERSION printf("glview: output geometry\n"
+        "  x:%d, y:%d, physical_width:%d mm, physical_height:%d mm\n"
+        "  subpixel:%d, make:'%s', model:'%s', transform:%d\n",
+        x, y, physical_width, physical_height,
+        subpixel, make, model, transform);
+
+	output->x = x;
+	output->y = y;
+	output->transform = transform;
+}
+
+static void display_handle_done(void *data,
+		     struct wl_output *wl_output)
+{
+	GLV_IF_DEBUG_VERSION printf("glview:output done\n");
+}
+
+static void display_handle_scale(void *data,
+		     struct wl_output *wl_output,
+		     int32_t scale)
+{
+	struct _glvoutput *output = data;
+
+	GLV_IF_DEBUG_VERSION printf("glview: output scale factor:%d\n", scale);
+
+	output->scale = scale;
+}
+
+static void display_handle_mode(void *data,
+		    struct wl_output *wl_output,
+		    uint32_t flags,
+		    int width,
+		    int height,
+		    int refresh)
+{
+	struct _glvoutput *output = data;
+
+    GLV_IF_DEBUG_VERSION printf("glview: output mode flags:0x%X, width:%d, heigh:%d, refresh:%d mHz\n",
+        flags, width, height, refresh);
+
+	if (flags & WL_OUTPUT_MODE_CURRENT) {
+		output->width = width;
+		output->height = height;
+	}
+}
+
+static const struct wl_output_listener output_listener = {
+	display_handle_geometry,
+	display_handle_mode,
+	display_handle_done,
+	display_handle_scale
+};
+
+static void display_add_output(GLV_DISPLAY_t *glv_display, uint32_t id, uint32_t version)
+{
+	struct _glvoutput *output = calloc(1, sizeof *output);
+	WL_DISPLAY_t *d = &glv_display->wl_dpy;
+
+	output->glv_dpy = glv_display;
+	output->scale = 1;
+	output->output = wl_registry_bind(d->registry, id, &wl_output_interface, 2);
+	output->id = id;
+	wl_list_insert(d->output_list.prev, &output->link);
+
+	wl_output_add_listener(output->output, &output_listener, output);
+}
+
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t id,
                        const char *interface, uint32_t version)
 {
@@ -1517,30 +1619,33 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
 	} else if(strcmp(interface, "wl_subcompositor") == 0){
    		d->subcompositor = wl_registry_bind(registry, id, &wl_subcompositor_interface, 1);
 	} else if(strcmp(interface, "xdg_wm_base") == 0) {
-		printf("glview:registry-interface-xdg_wm_base , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-xdg_wm_base , version = %d\n",version);
 		d->xdg_wm_shell = wl_registry_bind(registry, id,&xdg_wm_base_interface, 1);
 		xdg_wm_base_add_listener(d->xdg_wm_shell, &wm_base_listener, d);
 	} else if(strcmp(interface, "zxdg_shell_v6") == 0) {
-		printf("glview:registry-interface-zxdg_shell_v6 , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-zxdg_shell_v6 , version = %d\n",version);
 		d->zxdgV6_shell = wl_registry_bind(registry, id,&zxdg_shell_v6_interface, 1);
 		zxdg_shell_v6_add_listener(d->zxdgV6_shell, &zxdgV6_shell_listener, d);
 	} else if(strcmp(interface, "ivi_application") == 0) {
-		printf("glview:registry-interface-wl_shell , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_shell , version = %d\n",version);
 		d->ivi_application = wl_registry_bind(registry, id,&ivi_application_interface, 1);
 	} else if(strcmp(interface, "wl_shell") == 0) {
-		printf("glview:registry-interface-wl_shell , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_shell , version = %d\n",version);
 		if((0 == d->xdg_wm_shell) && (0 == d->zxdgV6_shell) && (0 == d->ivi_application) ){
 			d->wl_shell = wl_registry_bind(registry, id, &wl_shell_interface, 1);
 		}
 	} else if(strcmp(interface, "wl_shm") == 0) {
-		printf("glview:registry-interface-wl_shm , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_shm , version = %d\n",version);
 		d->shm = wl_registry_bind(registry, id, &wl_shm_interface, 1);
 	} else if (strcmp(interface, "wl_seat") == 0) {
-		printf("glview:registry-interface-wl_seat , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_seat , version = %d\n",version);
 		display_add_input(glv_display,registry,id,version);
 	} else if (strcmp(interface, "wl_data_device_manager") == 0) {
-		printf("glview:registry-interface-wl_data_device_manager , version = %d\n",version);
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_data_device_manager , version = %d\n",version);
 		display_add_data_device(glv_display, id, version);
+	} else if (strcmp(interface, "wl_output") == 0) {
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_output , version = %d\n",version);
+		display_add_output(glv_display, id, version);
 	}
 }
 
@@ -1609,6 +1714,7 @@ GLV_DISPLAY_t * _glvOpenNativeDisplay(GLV_DISPLAY_t *glv_dpy)
 		return(NULL);
 	}
 	wl_list_init(&glv_dpy->wl_dpy.input_list);
+	wl_list_init(&glv_dpy->wl_dpy.output_list);
 
 	glv_dpy->wl_dpy.registry = wl_display_get_registry(glv_dpy->native_dpy);
 	wl_registry_add_listener(glv_dpy->wl_dpy.registry, &registry_listener, glv_dpy);
@@ -1788,6 +1894,8 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 	}
 
 	w->surface = wl_compositor_create_surface(wl_dpy->compositor);
+
+	w->buffer_scale = 1;
 
 	if((w->parent == NULL) || (windowType == GLV_TYPE_THREAD_FRAME)){
 		// --------------------------------------------------------------------------------------
@@ -1980,6 +2088,7 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 		}
 		printf("\n");
 	}
+
 	wl_surface_commit(w->surface);
 	return(GLV_OK);
 }
