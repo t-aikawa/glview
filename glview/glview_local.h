@@ -182,7 +182,6 @@ typedef struct _wlwindow {
 	struct wl_callback		*frame_cb;
 	int32_t					buffer_scale;
 	uint32_t				last_time;
-	int32_t					toplevel_maximized;
 } WL_WINDOW_t;
 
 typedef struct _glvContext {
@@ -200,8 +199,11 @@ typedef struct _glv_window {
 	int			windowType;
 	int			attr;
 	int			drawCount;
-    int         top;
-	int			flag_configure;			// 最初に surface の configure イベントが呼ばれた
+    int         toplevel_activated;			// XDG_TOPLEVEL_STATE_ACTIVATED 状態
+	int			toplevel_maximized;			// XDG_TOPLEVEL_STATE_MAXIMIZED 状態
+	int			toplevel_unset_maximized_width;
+	int			toplevel_unset_maximized_height;
+	int			flag_surface_configure;		// 最初に surface の configure イベントが呼ばれた
 	GLV_FRAME_INFO_t	frameInfo;
 	/* --------------------------- */
 	// for debug

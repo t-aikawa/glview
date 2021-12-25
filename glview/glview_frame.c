@@ -260,19 +260,15 @@ static int frame_sheet_action(glvWindow glv_win,glvSheet sheet,int action,glvIns
 	}else if(selectId == glv_getInstanceId(user_data->wiget_button_maximize)){
 		// window maximize
 		if(glv_window->wl_window.xdg_wm_toplevel){
-			if(glv_window->wl_window.toplevel_maximized == 1){
-				glv_window->wl_window.toplevel_maximized = 0;
+			if(glv_window->toplevel_maximized == 1){
 				xdg_toplevel_unset_maximized(glv_window->wl_window.xdg_wm_toplevel);
 			}else{
-				glv_window->wl_window.toplevel_maximized = 1;
 				xdg_toplevel_set_maximized(glv_window->wl_window.xdg_wm_toplevel);
 			}
 		}else if(glv_window->wl_window.zxdgV6_toplevel){
-			if(glv_window->wl_window.toplevel_maximized == 1){
-				glv_window->wl_window.toplevel_maximized = 0;
+			if(glv_window->toplevel_maximized == 1){
 				zxdg_toplevel_v6_unset_maximized(glv_window->wl_window.zxdgV6_toplevel);
 			}else{
-				glv_window->wl_window.toplevel_maximized = 1;
 				zxdg_toplevel_v6_set_maximized(glv_window->wl_window.zxdgV6_toplevel);
 			}
 		}else if(glv_window->wl_window.wl_shell_surface){
@@ -659,26 +655,30 @@ static int frame_update(glvWindow glv_win,int drawStat)
 
 	if((user_data->shadow == 0) || (user_data->shadow == GLV_FRAME_SHADOW_DRAW_ON)){
     	// 影
-		if(glv_window->top == 1){
+		if(glv_window->toplevel_activated == 1){
+			int offset_x,offset_y;
+			int width,height;
+			if(glv_window->toplevel_maximized == 0){
+				offset_x = frameInfo->left_shadow_size + frameInfo->left_edge_size - 1;
+				offset_y = frameInfo->top_shadow_size  + frameInfo->top_edge_size;
+				width  = frameInfo->inner_width + frameInfo->left_edge_size + 2;
+				height = frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + 2;
+			}else{
+				offset_x=0;
+				offset_y=0;
+				width  = frameInfo->inner_width + frameInfo->left_edge_size + frameInfo->right_edge_size + 2;
+				height = frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + frameInfo->bottom_edge_size + 2;
+			}
 			glColor4f(0.0, 0.0, 0.0, 0.6);
-			glvGl_drawRectangle(frameInfo->left_shadow_size + frameInfo->left_edge_size - 1,
-								frameInfo->top_shadow_size  + frameInfo->top_edge_size,
-								frameInfo->inner_width + frameInfo->left_size + 2,
-								frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + 2);
+			glvGl_drawRectangle(offset_x,offset_y,width,height);
 			glColor4f(0.0, 0.0, 0.0, 0.4);
-			glvGl_drawRectangle(frameInfo->left_shadow_size + frameInfo->left_edge_size - 1,
-								frameInfo->top_shadow_size  + frameInfo->top_edge_size,
-								frameInfo->inner_width + frameInfo->left_size + 6,
-								frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + 6);
+			glvGl_drawRectangle(offset_x,offset_y,width + 4,height + 4);
 			glColor4f(0.0, 0.0, 0.0, 0.2);
-			glvGl_drawRectangle(frameInfo->left_shadow_size + frameInfo->left_edge_size - 1,
-								frameInfo->top_shadow_size  + frameInfo->top_edge_size,
-								frameInfo->inner_width + frameInfo->left_size + 10,
-								frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + 10);
+			glvGl_drawRectangle(offset_x,offset_y,width + 8,height + 8);
 		}
 	}
     // 下地
-    if(glv_window->top == 1){
+    if(glv_window->toplevel_activated == 1){
 		gBkgdColor = GLV_SET_RGBA(222,222,222,255);
     }else{
 		gBkgdColor = GLV_SET_RGBA(250,250,250,255);
@@ -719,7 +719,7 @@ static int frame_update(glvWindow glv_win,int drawStat)
 #endif
 
 	// ウィンドウタイトル
-    if(glv_window->top == 1){
+    if(glv_window->toplevel_activated == 1){
 		gFontColor = GLV_SET_RGBA(  0,  0,  0,255);
     }else{
 		gFontColor = GLV_SET_RGBA(100,100,100,255);
@@ -735,7 +735,7 @@ static int frame_update(glvWindow glv_win,int drawStat)
 		glColor4f(0.0, 0.0, 0.0, 1.0);
 
         // 外側の枠
-        // top line
+        // toplevel line
 		point[0].x = frameInfo->left_shadow_size;
 		point[0].y = frameInfo->top_shadow_size + 1;
 		point[1].x = point[0].x + frameInfo->left_edge_size + frameInfo->inner_width + frameInfo->right_edge_size;
@@ -761,7 +761,7 @@ static int frame_update(glvWindow glv_win,int drawStat)
 		glvGl_drawLineStrip(point,2,1);
 
         // 内側の枠
-        // top line
+        // toplevel line
 		glColor4f(0.5, 0.5, 0.5, 1.0);
 		point[0].x = frameInfo->left_size - 1;
 		point[0].y = frameInfo->top_size;

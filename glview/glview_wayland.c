@@ -132,19 +132,39 @@ void _glvResizeWindow(GLV_WINDOW_t *glv_window,int x,int y,int width,int height)
 {
 	glv_window->x  = x;
 	glv_window->y  = y;
+
+#if 0
 	glv_window->width  = width;
 	glv_window->height = height;
-
 	glv_window->frameInfo.frame_width  = width;
 	glv_window->frameInfo.frame_height = height;
 	glv_window->frameInfo.inner_width  = width  - glv_window->frameInfo.left_size - glv_window->frameInfo.right_size;
 	glv_window->frameInfo.inner_height = height - glv_window->frameInfo.top_size  - glv_window->frameInfo.bottom_size;
 
 	wl_egl_window_resize(glv_window->egl_window,width,height,0,0);
+#else
+	// toplevel configure から通知されるサイズ(width,int height)は、
+	// ウィンドウの実体範囲 (影などの部分を除いた範囲:xdg_surface_set_window_geometryで設定する) なので、
+	// 実際のサイズは、影を追加した範囲になる
+	glv_window->width  = width  + glv_window->frameInfo.left_shadow_size + glv_window->frameInfo.right_shadow_size;
+	glv_window->height = height + glv_window->frameInfo.top_shadow_size  + glv_window->frameInfo.bottom_shadow_size;
+	glv_window->frameInfo.frame_width  = glv_window->width;
+	glv_window->frameInfo.frame_height = glv_window->height;
+	glv_window->frameInfo.inner_width  = glv_window->frameInfo.frame_width  - glv_window->frameInfo.left_size - glv_window->frameInfo.right_size;
+	glv_window->frameInfo.inner_height = glv_window->frameInfo.frame_height - glv_window->frameInfo.top_size  - glv_window->frameInfo.bottom_size;
 
-#if 0
+	wl_egl_window_resize(glv_window->egl_window,glv_window->width,glv_window->height,0,0);
+
+	if(glv_window->toplevel_maximized == 0){
+		glv_window->toplevel_unset_maximized_width  = width;
+		glv_window->toplevel_unset_maximized_height = height;
+	}
+#endif
+
+#if 1
 	if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
 		if(glv_window->wl_window.xdg_wm_toplevel){
+			// ウィンドウの実体範囲 (影などの部分を除いた範囲）を設定する
 			xdg_surface_set_window_geometry(glv_window->wl_window.xdg_wm_surface,
 				glv_window->frameInfo.left_shadow_size,
 				glv_window->frameInfo.top_shadow_size,
@@ -1068,11 +1088,11 @@ static void xdg_wm_surface_handle_configure(void *data,
 
 	xdg_surface_ack_configure(surface, serial);
 
-	//printf("********************* xdg_wm_surface_handle_configure name:%s , flag_configure = %d\n",glv_window->name,glv_window->flag_configure);
+	//printf("********************* xdg_wm_surface_handle_configure name:%s , flag_surface_configure = %d\n",glv_window->name,glv_window->flag_surface_configure);
 
 	pthread_mutex_lock(&glv_window->serialize_mutex);				// window serialize_mutex
-	if(glv_window->flag_configure == 0){
-		glv_window->flag_configure = 1;
+	if(glv_window->flag_surface_configure == 0){
+		glv_window->flag_surface_configure = 1;
 		//printf("********************* start xdg_wm_surface_handle_configure name:%s\n",glv_window->name);
 		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
 		if(glv_window->eventFunc.start != NULL){
@@ -1093,6 +1113,7 @@ static const struct xdg_surface_listener xdg_wm_surface_listener = {
 static void _Window_configure(GLV_WINDOW_t *glv_frame,int width,int height)
 {
 	if((width == 0) || (height == 0)){
+		//printf("_Window_configure width = %d , height = %d\n",width,height);
 		return;
 	}
 #define MIN_WINDOW_SIZE		(200)
@@ -1101,11 +1122,24 @@ static void _Window_configure(GLV_WINDOW_t *glv_frame,int width,int height)
 
 	//サイズが変わったら更新
 	pthread_mutex_lock(&glv_frame->serialize_mutex);				// window serialize_mutex
+#if 0
 	if((width != glv_frame->frameInfo.frame_width) || (height != glv_frame->frameInfo.frame_height)){
 		glv_frame->frameInfo.frame_width  = width;
 		glv_frame->frameInfo.frame_height = height;
 		glv_frame->frameInfo.inner_width  = width  - glv_frame->frameInfo.left_size - glv_frame->frameInfo.right_size;
 		glv_frame->frameInfo.inner_height = height - glv_frame->frameInfo.top_size  - glv_frame->frameInfo.bottom_size;
+#else
+	if(	((width  + glv_frame->frameInfo.left_shadow_size + glv_frame->frameInfo.right_shadow_size)  != glv_frame->frameInfo.frame_width ) ||
+		((height + glv_frame->frameInfo.top_shadow_size  + glv_frame->frameInfo.bottom_shadow_size) != glv_frame->frameInfo.frame_height)   ){
+
+		// toplevel configure から通知されるサイズ(width,int height)は、
+		// ウィンドウの実体範囲 (影などの部分を除いた範囲:xdg_surface_set_window_geometryで設定する) なので、
+		// 実際のサイズは、影を追加した範囲になる
+		glv_frame->frameInfo.frame_width  = width  + glv_frame->frameInfo.left_shadow_size + glv_frame->frameInfo.right_shadow_size;
+		glv_frame->frameInfo.frame_height = height + glv_frame->frameInfo.top_shadow_size  + glv_frame->frameInfo.bottom_shadow_size;
+		glv_frame->frameInfo.inner_width  = glv_frame->frameInfo.frame_width  - glv_frame->frameInfo.left_size - glv_frame->frameInfo.right_size;
+		glv_frame->frameInfo.inner_height = glv_frame->frameInfo.frame_height - glv_frame->frameInfo.top_size  - glv_frame->frameInfo.bottom_size;
+#endif
 		//printf("_Window_configure frameInfo(%d,%d) inner(%d,%d)\n",glv_frame->frameInfo.frame_width,glv_frame->frameInfo.frame_height,glv_frame->frameInfo.inner_width,glv_frame->frameInfo.inner_height);
 		_glvOnConfigure(glv_frame,width, height);
 		if(glv_frame->eventFunc.configure == NULL){
@@ -1121,10 +1155,11 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
 			      struct wl_array *states)
 {
 	GLV_WINDOW_t *glv_window = data;
-    int old_top = glv_window->top;
+    int old_top = glv_window->toplevel_activated;
     uint32_t *p;
 
-    glv_window->top = 0;
+    glv_window->toplevel_activated = 0;
+    glv_window->toplevel_maximized = 0;
 
     GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"xdg_wm_toplevel_handle_configure %s\n"GLV_DEBUG_END_COLOR,glv_window->name);
 
@@ -1132,6 +1167,7 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
         uint32_t state = *p;
         switch (state) {
         case XDG_TOPLEVEL_STATE_MAXIMIZED:
+		    glv_window->toplevel_maximized = 1;
             GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"XDG_TOPLEVEL_STATE_MAXIMIZED %s\n"GLV_DEBUG_END_COLOR,glv_window->name);
             break;
         case XDG_TOPLEVEL_STATE_FULLSCREEN:
@@ -1141,7 +1177,7 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
             GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"XDG_TOPLEVEL_STATE_RESIZING %s\n"GLV_DEBUG_END_COLOR,glv_window->name);
             break;
         case XDG_TOPLEVEL_STATE_ACTIVATED:
-            glv_window->top = 1;
+            glv_window->toplevel_activated = 1;
             GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"XDG_TOPLEVEL_STATE_ACTIVATED %s\n"GLV_DEBUG_END_COLOR,glv_window->name);
             break;
         default:
@@ -1151,9 +1187,15 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
         }
     }
     //printf(GLV_DEBUG_MSG_COLOR"xdg_wm_toplevel_handle_configure [%s] id = %ld , width = %d , height = %d\n"GLV_DEBUG_END_COLOR,glv_window->name,glv_window->instance.Id,width,height);
-	
-	_Window_configure(glv_window,width,height);
-    if(old_top != glv_window->top){
+
+	if ((width > 0) && (height > 0)){
+		_Window_configure(glv_window,width,height);
+	}else if((glv_window->toplevel_unset_maximized_width > 0) &&
+			 (glv_window->toplevel_unset_maximized_height > 0)   ){
+		_Window_configure(glv_window,glv_window->toplevel_unset_maximized_width,glv_window->toplevel_unset_maximized_height);
+	}
+
+    if(old_top != glv_window->toplevel_activated){
         //printf("xdg_wm_toplevel_handle_configure: glvOnUpdate %s\n",glv_window->name);
         glvOnUpdate(glv_window);
     }
@@ -1178,8 +1220,8 @@ static void handle_zxdgV6_surface_configure(void *data, struct zxdg_surface_v6 *
 
 	//printf("********************* handle_zxdgV6_surface_configure name:%s\n",glv_window->name);
 
-	if(glv_window->flag_configure == 0){
-		glv_window->flag_configure = 1;
+	if(glv_window->flag_surface_configure == 0){
+		glv_window->flag_surface_configure = 1;
 		//printf("********************* start handle_zxdgV6_surface_configure name:%s\n",glv_window->name);
 		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
 		if(glv_window->eventFunc.start != NULL){
@@ -1223,8 +1265,8 @@ static void handle_configure(void *data, struct wl_shell_surface *shell_surface,
 
 	//printf("********************* handle_configure name:%s\n",glv_window->name);
 
-	if(glv_window->flag_configure == 0){
-		glv_window->flag_configure = 1;
+	if(glv_window->flag_surface_configure == 0){
+		glv_window->flag_surface_configure = 1;
 		//printf("********************* start handle_configure name:%s\n",glv_window->name);
 		//printf("inner_width = %d , inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
 		if(glv_window->eventFunc.start != NULL){
