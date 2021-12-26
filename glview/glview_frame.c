@@ -97,6 +97,29 @@ static int button_close_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
 			break;
 	}
 
+	switch(kind){
+		case GLV_WIGET_STATUS_FOCUS:
+		case GLV_WIGET_STATUS_PRESS:
+			{
+				// 	× 描画
+				GLV_T_POINT_t point[2];
+				glColor4f(0.0, 0.0, 0.0, 1.0);
+				point[0].x = x;
+				point[0].y = y;
+				point[1].x = x + w - 1;
+				point[1].y = y + h - 1;
+				glvGl_drawLineStrip(point,2,1);
+				point[0].x = x;
+				point[0].y = y + h - 1;
+				point[1].x = x + w - 1;
+				point[1].y = y;
+				glvGl_drawLineStrip(point,2,1);
+			}
+			break;
+		default:
+			break;
+	}
+
 	//printf("button_close_redraw\n");
 	//glDisable(GL_BLEND);
 	glPopMatrix();
