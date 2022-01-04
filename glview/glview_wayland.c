@@ -1657,8 +1657,10 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
 	WL_DISPLAY_t *d = &glv_display->wl_dpy;
 
 	if (strcmp(interface, "wl_compositor") == 0) {
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_compositor , version = %d\n",version);
 		d->compositor = wl_registry_bind(registry, id, &wl_compositor_interface, 1);
 	} else if(strcmp(interface, "wl_subcompositor") == 0){
+		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_subcompositor , version = %d\n",version);
    		d->subcompositor = wl_registry_bind(registry, id, &wl_subcompositor_interface, 1);
 	} else if(strcmp(interface, "xdg_wm_base") == 0) {
 		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-xdg_wm_base , version = %d\n",version);

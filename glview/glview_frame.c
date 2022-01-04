@@ -129,6 +129,7 @@ static int button_close_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
 
 static int button_maximize_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget)
 {
+	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
 	GLV_WIGET_GEOMETRY_t	geometry;
 	int		kind;
 	float x,y,w,h;
@@ -168,24 +169,33 @@ static int button_maximize_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wige
 	}
 
 	{
-		int offset = 2;
+		int offset=2;
 		GLV_T_POINT_t point[5];
-		glColor4f(0.5, 0.5, 0.5, 1.0);
 
+		if(glv_window->toplevel_maximized == 1){
+			glColor4f(0.4, 0.4, 0.4, 1.0);
+			point[0].x = x + offset + 2 + 0;
+			point[0].y = y + offset - 2;
+			point[1].x = point[0].x + w - offset * 2 - 0;
+			point[1].y = point[0].y;
+			point[2].x = point[1].x;
+			point[2].y = point[0].y + h - offset * 2 - 0;
+			//glvGl_drawLineStrip(point,3,1);
+			glvGl_drawLines(point,3,2);
+			offset = 3;
+		}
+		glColor4f(0.5, 0.5, 0.5, 1.0);
 		point[0].x = x + offset;
 		point[0].y = y + offset;
-		point[1].x = point[0].x;
-		point[1].y = point[0].y + h - offset * 2;
-
-		point[2].x = point[0].x + w - offset * 2;
-		point[2].y = point[1].y;
-		point[3].x = point[2].x;
-		point[3].y = point[0].y;
+		point[1].x = point[0].x + w - offset * 2;
+		point[1].y = point[0].y;
+		point[2].x = point[1].x;
+		point[2].y = point[1].y + h - offset * 2;
+		point[3].x = point[0].x;
+		point[3].y = point[2].y;
 		point[4].x = point[0].x;
 		point[4].y = point[0].y;
-
 		glvGl_drawLines(point,5,2);
-
 	}
 
 	//printf("button_close_redraw\n");
