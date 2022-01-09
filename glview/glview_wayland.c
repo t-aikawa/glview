@@ -155,6 +155,19 @@ void _glvResizeWindow(GLV_WINDOW_t *glv_window,int x,int y,int width,int height)
 
 	wl_egl_window_resize(glv_window->egl_window,glv_window->width,glv_window->height,0,0);
 
+#if 1
+	{
+		struct wl_region *region;
+		region = wl_compositor_create_region(glv_window->glv_dpy->wl_dpy.compositor);
+		if(glv_window->attr &  GLV_WINDOW_ATTR_DISABLE_POINTER_EVENT){
+		}else{
+			wl_region_add(region, 0, 0, glv_window->width,glv_window->height);	
+		}
+		wl_surface_set_input_region(glv_window->wl_window.surface, region);
+		wl_region_destroy(region);
+	}
+#endif
+
 	if(glv_window->toplevel_maximized == 0){
 		glv_window->toplevel_unset_maximized_width  = width;
 		glv_window->toplevel_unset_maximized_height = height;

@@ -761,7 +761,12 @@ static int frame_update(glvWindow glv_win,int drawStat)
 	glvFont_setBkgdColor(gBkgdColor);
 	glvFont_SetStyle(GLV_FONT_NAME_NORMAL,16,0.0f,0,GLV_FONT_NAME | GLV_FONT_SIZE | GLV_FONT_CENTER);
 	glvFont_SetPosition(frameInfo->frame_width/2,(2+frameInfo->top_name_size/2 + frameInfo->top_shadow_size + frameInfo->top_edge_size/2));
-	glvFont_printf("%s(%d)",glv_window->title,glv_window->drawCount+1);
+
+	GLV_IF_DEBUG_MSG{
+		glvFont_printf("%s(%d)",glv_window->title,glv_window->drawCount+1);
+	}else{
+		glvFont_printf("%s",glv_window->title);
+	}
 
 	{   // edge
 		GLV_T_POINT_t point[2];
