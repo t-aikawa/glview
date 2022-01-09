@@ -30,3 +30,11 @@ executable(
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
 	dependencies : [glesv2,dep_libm])
+
+executable(
+    's001', [
+	's001.c'
+    ],
+    include_directories: includes,  # インクルードディレクトリの指定
+    link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
+	dependencies : [glesv2,dep_libm])
