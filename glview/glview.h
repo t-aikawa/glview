@@ -42,6 +42,7 @@
 #include "pthread_timer.h"
 
 #include "glview_gl.h"
+#include "glview_png.h"
 
 #ifndef UNUSED
 #define UNUSED(x) (void)x
