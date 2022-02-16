@@ -5,7 +5,8 @@
 
 #include "glview.h"
 
-static char *image_c_source =
+static long image_c_source_size = 2464;
+static char *image_c_source_data =
 "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x40\x00\x00\x00\x40\x08\x03\x00\x00\x00\x9d\xb7\x81"
 "\xec\x00\x00\x02\xee\x50\x4c\x54\x45\x00\x00\x00\x09\x09\x09\x00\x00\x00\x00\x00\x00\x05\x05\x05\x00\x00\x00\x3e\x3e\x3e\xf1\xf1"
 "\xf1\xd5\xd5\xd5\xe6\xe6\xe6\x09\x09\x09\x04\x04\x04\x00\x00\x00\x05\x05\x05\x04\x04\x04\x09\x09\x09\xfc\xf8\xf8\xcf\xcf\xcf\xd2"
@@ -145,7 +146,7 @@ static int window_init(glvWindow glv_win,int width, int height)
 	struct window_user_data *window_user_data = glv_getUserData(glv_win);
 
 #if 1
-	window_user_data->img001.data = glv_decodePngDataForMemory(image_c_source,&window_user_data->img001.width,&window_user_data->img001.height);
+	window_user_data->img001.data = glv_decodePngDataForMemory(image_c_source_data,image_c_source_size,&window_user_data->img001.width,&window_user_data->img001.height);
 #else
 #define FILE_NAME	"/home/t-aikawa/image-io/a.png"
 	window_user_data->img001.data = glv_decodePngDataForFilePath(FILE_NAME,&window_user_data->img001.width,&window_user_data->img001.height);

@@ -28,7 +28,7 @@
 #include <png.h>
 #include "glview.h"
 
-#define PNG_IF_DEBUG_PRINT	if(1)
+#define PNG_IF_DEBUG_PRINT	if(0)
 
 typedef struct memory_read_interface {
 	uint8_t *data;	// PNGデータ
@@ -191,7 +191,7 @@ static uint8_t *decode(png_structp png_ptr,png_infop info_ptr,int* p_Width,int* 
 	return(img);
 }
 
-uint8_t *glv_decodePngDataForMemory(char* data,int* p_Width,int* p_Height)
+uint8_t *glv_decodePngDataForMemory(char* data,long filesize,int* p_Width,int* p_Height)
 {
 	png_structp png_ptr = NULL;
 	png_infop info_ptr = NULL;
@@ -217,6 +217,9 @@ uint8_t *glv_decodePngDataForMemory(char* data,int* p_Width,int* p_Height)
 
 	error:
 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+	UNUSED(filesize);
+
 	return(img);
 }
 
@@ -273,12 +276,17 @@ void glv_createCsourcePngDataForFilePath(char* file_path,char* out_name)
 	int	ch;
 	char path_name[PATH_NAME_SIZE];	// ファイルパス
 	char *path;
+	long fileSize;
 
 	ifp = fopen(file_path,"rb");
 	if(ifp == NULL){
 		fprintf(stderr,"glv_createCsourcePngDataForFilePath : not found [%s]\n",file_path);
 		return;
 	}
+
+	fseek(ifp,0,SEEK_END);
+	fileSize=ftell(ifp);
+	fseek(ifp,0,SEEK_SET);
 
 	wfp = fopen(out_name,"wb");
 	if(wfp == NULL) {
@@ -288,7 +296,8 @@ void glv_createCsourcePngDataForFilePath(char* file_path,char* out_name)
 	}
 
 	n = 0;
-	fprintf(wfp,"static char *%s =",out_name);
+	fprintf(wfp,"static long %s_size = %ld;\n",out_name,fileSize);
+	fprintf(wfp,"static char *%s_data =",out_name);
 	while((ch = fgetc(ifp)) != EOF){
 		if(n == 0){
 			fprintf(wfp,"\n\"");

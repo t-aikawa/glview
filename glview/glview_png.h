@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-uint8_t *glv_decodePngDataForMemory(char* data,int* p_Width,int* p_Height);
+uint8_t *glv_decodePngDataForMemory(char* data,long filesize,int* p_Width,int* p_Height);
 uint8_t *glv_decodePngDataForFilePath(char* file_path,int* p_Width,int* p_Height);
 void glv_createCsourcePngDataForFilePath(char* file_path,char* out_name);
 
