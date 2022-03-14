@@ -153,6 +153,13 @@ void _glvResizeWindow(GLV_WINDOW_t *glv_window,int x,int y,int width,int height)
 	glv_window->frameInfo.inner_width  = glv_window->frameInfo.frame_width  - glv_window->frameInfo.left_size - glv_window->frameInfo.right_size;
 	glv_window->frameInfo.inner_height = glv_window->frameInfo.frame_height - glv_window->frameInfo.top_size  - glv_window->frameInfo.bottom_size;
 
+#if 0
+	printf("_glvResizeWindow: width = %d, height = %d\n",width, height);
+	printf("_glvResizeWindow: left_shadow_size = %d, right_shadow_size = %d\n",glv_window->frameInfo.left_shadow_size,glv_window->frameInfo.right_shadow_size);
+	printf("_glvResizeWindow: left_size = %d, right_size = %d\n",glv_window->frameInfo.left_size,glv_window->frameInfo.right_size);
+	printf("_glvResizeWindow: inner_width = %d, inner_height = %d\n",glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+#endif
+
 	wl_egl_window_resize(glv_window->egl_window,glv_window->width,glv_window->height,0,0);
 
 #if 1
@@ -345,6 +352,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
                     uint32_t state)
 {
 	int functionFlag = 0;
+	int freameForceFlag = 0;
 	xkb_keysym_t sym;
 	int text[2];
 	struct _glvinput *glv_input = data;
@@ -383,32 +391,46 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 				return;
 			}
 		}
-
+#if 0
 		if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
-			if(glv_input_func.keyboard_function_key != 0) (*glv_input_func.keyboard_function_key)(sym,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			if(glv_input_func.keyboard_function_key != 0) (*glv_input_func.keyboard_function_key)(sym,glv_input->modifiers,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}else if(state == WL_KEYBOARD_KEY_STATE_RELEASED){
-			if(glv_input_func.keyboard_function_key != 0) (*glv_input_func.keyboard_function_key)(sym,GLV_KEYBOARD_KEY_STATE_RELEASED);
+			if(glv_input_func.keyboard_function_key != 0) (*glv_input_func.keyboard_function_key)(sym,glv_input->modifiers,GLV_KEYBOARD_KEY_STATE_RELEASED);
 		}
 		return;
+#endif
 	}
 
-	ime_rc = 1;
-	glv_input->im_state = GLV_KEY_STATE_IM_OFF;
-	if((glv_input->im != NULL) && (glv_input->ime_key_event != NULL)){
+	{
+		GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)_glvGetWindowFromId(glv_input->glv_dpy,glv_input->glv_dpy->toplevel_active_frameId);
+		if(glv_window != NULL){
+			if(glv_window->eventFunc.key != NULL){
+				freameForceFlag = 1;
+			}
+		}
+	}
+
+	if(freameForceFlag == 0){
+		// IMEが有効な場合
+		ime_rc = 1;
 		glv_input->im_state = GLV_KEY_STATE_IM_OFF;
-		if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
-			ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyPress);
-		}else if(state == WL_KEYBOARD_KEY_STATE_RELEASED){
-			ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyRelease);
+		if((glv_input->im != NULL) && (glv_input->ime_key_event != NULL)){
+			glv_input->im_state = GLV_KEY_STATE_IM_OFF;
+			if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
+				ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyPress);
+			}else if(state == WL_KEYBOARD_KEY_STATE_RELEASED){
+				ime_rc = (glv_input->ime_key_event)(glv_input,key + 8,sym,0,GLV_KeyRelease);
+			}
+		}
+		if(glv_input->im_state != GLV_KEY_STATE_IM_OFF){
+			return;
+		}
+		if(ime_rc == 0){
+			return;
 		}
 	}
-	if(glv_input->im_state != GLV_KEY_STATE_IM_OFF){
-		return;
-	}
-	if(ime_rc == 0){
-		return;
-	}
 
+	// IMEが無効な場合
 	switch (sym) {
 	case XKB_KEY_KP_Space:
 		sym = XKB_KEY_space;
@@ -468,20 +490,62 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 		break;
 	}
 
-	if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
-		if(sym < 0xff){
-			text[0] = (int)sym;
-			text[1] = 0;
-  			_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_ASCII,GLV_KEY_STATE_IM_OFF,sym,text,NULL,1);
-		}else{
-			if(sym == XKB_KEY_Insert){
-				glv_input->glv_dpy->ins_mode ^= 1;
-				_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_INSERT,GLV_KEY_STATE_IM_OFF,sym,NULL,NULL,0);
+	if(freameForceFlag == 1){
+		GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)_glvGetWindowFromId(glv_input->glv_dpy,glv_input->glv_dpy->toplevel_active_frameId);
+		if(glv_window != NULL){
+			if(glv_window->eventFunc.key != NULL){
+				int	key_status;
+				if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
+					key_status = GLV_KEYBOARD_KEY_STATE_PRESSED;
+				}else{
+					key_status = GLV_KEYBOARD_KEY_STATE_RELEASED;
+				}
+				_glvOnKey(glv_window,sym,glv_input->modifiers,key_status);
+			}
+		}
+	}else{
+		if(state == WL_KEYBOARD_KEY_STATE_PRESSED){
+			if(sym < 0xff){
+				text[0] = (int)sym;
+				text[1] = 0;
+				_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_ASCII,GLV_KEY_STATE_IM_OFF,sym,text,NULL,1);
 			}else{
-  				_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_CTRL,GLV_KEY_STATE_IM_OFF,sym,NULL,NULL,0);
+				if(sym == XKB_KEY_Insert){
+					glv_input->glv_dpy->ins_mode ^= 1;
+					_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_INSERT,GLV_KEY_STATE_IM_OFF,sym,NULL,NULL,0);
+				}else{
+					_glvOnTextInput((glvDisplay)glv_input->glv_dpy,GLV_KEY_KIND_CTRL,GLV_KEY_STATE_IM_OFF,sym,NULL,NULL,0);
+				}
 			}
 		}
 	}
+}
+
+static void glv_key_modifiers(struct _glvinput *glv_input,xkb_mod_mask_t mask)
+{
+    glv_input->modifiers = 0;
+    if(mask & glv_input->shift_mask)
+        glv_input->modifiers |= GLV_SHIFT_MASK;
+    if(mask & glv_input->lock_mask)
+        glv_input->modifiers |= GLV_LOCK_MASK;
+    if(mask & glv_input->control_mask)
+        glv_input->modifiers |= GLV_CONTROL_MASK;
+    if(mask & glv_input->mod1_mask)
+        glv_input->modifiers |= GLV_MOD1_MASK;
+    if(mask & glv_input->mod2_mask)
+        glv_input->modifiers |= GLV_MOD2_MASK;
+    if(mask & glv_input->mod3_mask)
+        glv_input->modifiers |= GLV_MOD3_MASK;
+    if(mask & glv_input->mod4_mask)
+        glv_input->modifiers |= GLV_MOD4_MASK;
+    if(mask & glv_input->mod5_mask)
+        glv_input->modifiers |= GLV_MOD5_MASK;
+    if(mask & glv_input->super_mask)
+        glv_input->modifiers |= GLV_SUPER_MASK;
+    if(mask & glv_input->hyper_mask)
+        glv_input->modifiers |= GLV_HYPER_MASK;
+    if(mask & glv_input->meta_mask)
+        glv_input->modifiers |= GLV_META_MASK;
 }
 
 static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
@@ -534,6 +598,7 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 	if(glv_input->ime_key_modifiers != NULL){
 		(glv_input->ime_key_modifiers)(glv_input,mods);
 	}
+	glv_key_modifiers(glv_input,mods);
 }
 
 /* キーリピートの情報 */
@@ -620,7 +685,7 @@ static void pointer_handle_motion(void *data, struct wl_pointer *pointer,
 	//printf("Pointer moved at %d %d\n", glv_input->pointer_sx, glv_input->pointer_sy);
 	pthread_mutex_lock(&glv_input->glv_dpy->display_mutex);		// display
 
-	glv_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
+	glv_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
 	if(glv_window != NULL){
 		if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
 			glv_window->edges = _get_frame_edges(glv_window, glv_input->pointer_sx, glv_input->pointer_sy);
@@ -640,7 +705,7 @@ static void pointer_handle_motion(void *data, struct wl_pointer *pointer,
 		//printf("wigetId = %ld\n",wigetId);
 		if(glv_input->pointer_focus_wigetId != wigetId){
 			if(glv_input->pointer_focus_wigetId != 0){
-				leave_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_focus_windowId);
+				leave_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_focus_windowId);
 				GLV_IF_DEBUG_WIGET printf("wigetId = %ld leave\n",glv_input->pointer_focus_wigetId);
 				if(leave_window != NULL){
 					if(leave_window->active_sheet != NULL){
@@ -706,7 +771,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
 
 	pthread_mutex_lock(&glv_input->glv_dpy->display_mutex);			// display
 
-	glv_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
+	glv_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
 	if(state == WL_POINTER_BUTTON_STATE_PRESSED){
 		if(glv_window != NULL){
 			glv_window->wl_window.last_time = time;
@@ -858,7 +923,7 @@ static void pointer_handle_axis(void *data, struct wl_pointer *wl_pointer,
 
 	pthread_mutex_lock(&glv_input->glv_dpy->display_mutex);			// display
 
-	glv_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
+	glv_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
 
 #if 0
 	if(glv_window != NULL){
@@ -953,7 +1018,7 @@ static void touch_handle_up(void *data, struct wl_touch *touch, uint32_t serial,
 
 	pthread_mutex_lock(&glv_input->glv_dpy->display_mutex);		// display
 
-	glv_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
+	glv_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
 	if (glv_input->find_wiget == 1){
 		 /* wigetを見つけている */
 		if(glv_input_func.touch_up != 0) (*glv_input_func.touch_up)(glv_input->pointer_sx,glv_input->pointer_sy);
@@ -1000,7 +1065,7 @@ static void touch_handle_motion(void *data, struct wl_touch *touch, uint32_t tim
 
 	pthread_mutex_lock(&glv_input->glv_dpy->display_mutex);		// display
 
-	glv_window = _glvGetWindow(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
+	glv_window = _glvGetWindowFromId(glv_input->glv_dpy,glv_input->pointer_enter_windowId);
 	_glv_window_and_sheet_mousePointer_front(glv_window,GLV_MOUSE_EVENT_MOTION,time,glv_input->pointer_sx,glv_input->pointer_sy,pointer_left_stat);
 
 	pthread_mutex_unlock(&glv_input->glv_dpy->display_mutex);		// display
@@ -1191,6 +1256,7 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
             break;
         case XDG_TOPLEVEL_STATE_ACTIVATED:
             glv_window->toplevel_activated = 1;
+			glv_window->glv_dpy->toplevel_active_frameId = glv_window->instance.Id;
             GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"XDG_TOPLEVEL_STATE_ACTIVATED %s\n"GLV_DEBUG_END_COLOR,glv_window->name);
             break;
         default:
@@ -1200,6 +1266,20 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
         }
     }
     //printf(GLV_DEBUG_MSG_COLOR"xdg_wm_toplevel_handle_configure [%s] id = %ld , width = %d , height = %d\n"GLV_DEBUG_END_COLOR,glv_window->name,glv_window->instance.Id,width,height);
+
+	pthread_mutex_lock(&glv_window->serialize_mutex);				// window serialize_mutex
+	//printf("xdg_wm_toplevel_handle_configure:flag_toplevel_configure = %d\n",glv_window->flag_toplevel_configure);
+	if(glv_window->flag_toplevel_configure == 0){
+		if ((width > 0) && (height > 0)){
+			glv_window->flag_toplevel_configure = 1;
+			if(glv_window->req_toplevel_resize == 1){
+				glv_window->req_toplevel_resize = 0;
+				width  = glv_window->req_toplevel_inner_width  + glv_window->frameInfo.left_size + glv_window->frameInfo.right_size  - glv_window->frameInfo.left_shadow_size - glv_window->frameInfo.right_shadow_size;
+				height = glv_window->req_toplevel_inner_height + glv_window->frameInfo.top_size  + glv_window->frameInfo.bottom_size - glv_window->frameInfo.top_shadow_size  - glv_window->frameInfo.bottom_shadow_size;	
+			}
+		}
+	}
+	pthread_mutex_unlock(&glv_window->serialize_mutex);				// window serialize_mutex
 
 	if ((width > 0) && (height > 0)){
 		_Window_configure(glv_window,width,height);
@@ -2039,7 +2119,11 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 	glv_window->egl_window	= native;
 	glv_window->windowType	= windowType;
 	glv_window->name		= name;
-	glv_window->title		= title;
+	if(title != NULL){
+		glv_window->title	= strdup(title);
+	}else{
+		glv_window->title = NULL;
+	}
 	glv_window->x			= x;
 	glv_window->y			= y;
 	glv_window->width		= width;
@@ -2194,6 +2278,11 @@ void _glvGcDestroyWindow(GLV_WINDOW_t *glv_window)
 	GLV_IF_DEBUG_INSTANCE printf(GLV_DEBUG_INSTANCE_COLOR"_glvGcDestroyWindow id = %ld [%s]\n"GLV_DEBUG_END_COLOR,glv_window->instance.Id,glv_window->name);
 
 	sem_destroy(&glv_window->initSync);
+
+	if(glv_window->title){
+		free(glv_window->title);
+		glv_window->title = NULL;
+	}
 
 	//free(glv_window);
 }
@@ -2475,7 +2564,7 @@ void glvSwapBuffers(glvWindow glv_win)
 #endif
 }
 
-GLV_WINDOW_t *_glvGetWindow(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId)
+GLV_WINDOW_t *_glvGetWindowFromId(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId)
 {
 	GLV_WINDOW_t *glv_window;
 

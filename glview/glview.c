@@ -21,6 +21,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#define _GNU_SOURCE
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,7 +36,7 @@
 #include "weston-client-window.h"
 #include "glview_local.h"
 
-#define GLV_NAME_TEXT	"glview:version 0.1.11(" __DATE__ ")"
+#define GLV_NAME_TEXT	"glview:version 0.1.14(" __DATE__ ")"
 
 #define GLV_OPENGL_ES1_API	(1)
 #define GLV_OPENGL_ES2_API	(2)
@@ -463,6 +465,13 @@ void glvWindow_setHandler_action(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_action_
 	glv_window->eventFunc.action = action;
 }
 
+void glvWindow_setHandler_key(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_key_t key)
+{
+	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
+	if(glv_window == NULL) return;
+	glv_window->eventFunc.key = key;
+}
+
 void glvWindow_setHandler_endDraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_endDraw_t endDraw)
 {
 	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
@@ -781,6 +790,7 @@ void glvDestroyWindow(glvWindow *glv_win)
 
 	if(glv_window->ctx.endReason == GLV_END_REASON__EXTERNAL){
 		pthread_mutex_destroy(&glv_window->window_mutex);
+		pthread_mutex_destroy(&glv_window->serialize_mutex);
 		free(glv_window);
 	}
 	*glv_win = NULL;
@@ -1039,6 +1049,17 @@ void *glvExecMsg(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 
 			}
 			break;
+		case GLV_ON_KEY:
+			GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"[%s] GLV_ON_KEY\n"GLV_DEBUG_END_COLOR,glv_window->name);
+			//printf("GLV_ON_KEY\n");
+			if(glv_window->eventFunc.key != NULL){
+				int rc;
+				rc = (glv_window->eventFunc.key)(glv_window,rmsg->data[2],rmsg->data[3],rmsg->data[4]);
+				if(rc != GLV_OK){
+					fprintf(stderr,"[%s] glv_window->eventFunc.key error\n",glv_window->name);
+				}
+			}
+			break;
 		case GLV_ON_KEY_INPUT:
 			GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"[%s] GLV_ON_KEY_INPUT\n"GLV_DEBUG_END_COLOR,glv_window->name);
 			//printf("[%s] GLV_ON_KEY_INPUT\n",glv_window->name);
@@ -1080,7 +1101,7 @@ int glvMsgHandler(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 	target_window = glv_window;
 
 	if(glv_window->instance.Id != rmsg->data[1]){
-		target_window = _glvGetWindow(glv_window->glv_dpy,rmsg->data[1]);
+		target_window = _glvGetWindowFromId(glv_window->glv_dpy,rmsg->data[1]);
 		//printf("target_window %s\n",target_window->name);
 		//printf("glvSurfaceViewMsgHandler:子供のウインドウの処理を受け付けた WindowId = %ld -> %ld\n",glv_window->instance.Id,rmsg->data[1]);
 		if(target_window == NULL){
@@ -1303,6 +1324,7 @@ void *glvSurfaceViewProc(void *param)
 
 	if(glv_window->ctx.endReason == GLV_END_REASON__INTERNAL){
 		pthread_mutex_destroy(&glv_window->window_mutex);
+		pthread_mutex_destroy(&glv_window->serialize_mutex);
 		free(glv_window);
 	}
 	return(NULL);
@@ -1342,6 +1364,12 @@ glvWindow glvCreateThreadSurfaceView(glvWindow glv_win)
 		return(NULL);
 	}
 
+	if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
+		pthread_setname_np(threadId,"glv_frame");
+	}else{
+		pthread_setname_np(threadId,"glv_window");
+	}
+
 	//printf("sem_wait(&glv_window->initSync); wait [%s]\n",glv_window->name);
 	// glvSurfaceViewProcの起動を待つ
 	sem_wait(&glv_window->initSync);
@@ -1352,6 +1380,85 @@ glvWindow glvCreateThreadSurfaceView(glvWindow glv_win)
 	glv_window->ctx.runThread = 1;
 
 	return (glv_window);
+}
+
+int glvWindow_setTitle(glvWindow glv_win,const char *title)
+{
+	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
+	int instanceType;
+	int	rc;
+
+	if(glv_window == NULL){
+		return(GLV_ERROR);
+	}
+
+	if(glv_window->instance.alive != GLV_INSTANCE_ALIVE){
+		return(GLV_ERROR);
+	}
+
+	instanceType = glv_getInstanceType(glv_window);
+	if(instanceType != GLV_INSTANCE_TYPE_WINDOW){
+		return(GLV_ERROR);
+	}
+
+	if(glv_window->windowType != GLV_TYPE_THREAD_FRAME){
+		return(GLV_ERROR);
+	}
+	pthread_mutex_lock(&glv_window->window_mutex);			// window
+	if(glv_window->title != NULL){
+		free(glv_window->title);
+		glv_window->title = NULL;
+	}
+	if(title != NULL){
+		glv_window->title = strdup(title);
+	}
+	if(glv_window->flag_surface_configure != 0){
+		glvOnReDraw(glv_window);
+	}
+	pthread_mutex_unlock(&glv_window->window_mutex);		// window
+	return(GLV_OK);
+}
+
+int glvWindow_setInnerSize(glvWindow glv_win,int width, int height)
+{
+	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
+	int instanceType;
+	int	rc;
+
+	if(glv_window == NULL){
+		return(GLV_ERROR);
+	}
+
+	if(glv_window->instance.alive != GLV_INSTANCE_ALIVE){
+		return(GLV_ERROR);
+	}
+
+	instanceType = glv_getInstanceType(glv_window);
+	if(instanceType != GLV_INSTANCE_TYPE_WINDOW){
+		return(GLV_ERROR);
+	}
+
+	pthread_mutex_lock(&glv_window->serialize_mutex);				// window serialize_mutex
+	if(glv_window->windowType == GLV_TYPE_THREAD_FRAME){
+		//printf("glvWindow_setInnerSize:flag_toplevel_configure = %d\n",glv_window->flag_toplevel_configure);
+		if(glv_window->flag_toplevel_configure == 0){
+			glv_window->req_toplevel_resize = 1;
+			// 内部の描画エリア
+			glv_window->req_toplevel_inner_width  = width;
+			glv_window->req_toplevel_inner_height = height;
+			pthread_mutex_unlock(&glv_window->serialize_mutex);		// window serialize_mutex
+			return(GLV_OK);
+		}else{
+			// 影を除いたエリア
+			width  += (glv_window->frameInfo.left_size + glv_window->frameInfo.right_size  - glv_window->frameInfo.left_shadow_size - glv_window->frameInfo.right_shadow_size);
+			height += (glv_window->frameInfo.top_size  + glv_window->frameInfo.bottom_size - glv_window->frameInfo.top_shadow_size  - glv_window->frameInfo.bottom_shadow_size);			
+		}
+	}
+	pthread_mutex_unlock(&glv_window->serialize_mutex);				// window serialize_mutex
+
+	rc = glvOnReShape(glv_win,0,0,width,height);
+
+	return(rc);
 }
 
 int _glvOnInit_for_childWindow(glvWindow glv_win,int width, int height)
@@ -1898,6 +2005,36 @@ int glvOnAction(void *glv_instance,int action,glvInstanceId selectId)
 	return (GLV_OK);
 }
 
+int _glvOnKey(glvWindow glv_win,unsigned int key,unsigned int modifiers,unsigned int state)
+{
+	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)glv_win;
+	GLV_WINDOW_t *teamLeader;
+	pthread_msq_msg_t smsg;
+
+	if(glv_window == NULL){
+		return (GLV_ERROR);
+	}
+
+	if(glv_window->instance.alive != GLV_INSTANCE_ALIVE){
+		return (GLV_ERROR);
+	}
+
+	if(glv_window->teamLeader == NULL){
+		// 関数コール
+		return (GLV_OK);
+	}
+	teamLeader = glv_window->teamLeader;
+
+	smsg.data[0] = GLV_ON_KEY;
+	smsg.data[1] = glv_window->instance.Id;
+	smsg.data[2] = key;
+	smsg.data[3] = modifiers;
+	smsg.data[4] = state;
+	//GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"GLV_ON_KEY \n"GLV_DEBUG_END_COLOR);
+	pthread_msq_msg_send(&teamLeader->ctx.queue,&smsg,0);
+	return (GLV_OK);
+}
+
 int _glvOnTextInput(glvDisplay glv_dpy,int kind,int state,uint32_t kyesym,int *utf32,uint8_t *attr,int length)
 {
 	GLV_DISPLAY_t *glv_display = (GLV_DISPLAY_t*)glv_dpy;
@@ -1915,7 +2052,7 @@ int _glvOnTextInput(glvDisplay glv_dpy,int kind,int state,uint32_t kyesym,int *u
 	sheetId  = glv_display->kb_input_sheetId;
 	wigetId  = glv_display->kb_input_wigetId;
 
-	glv_window = _glvGetWindow(glv_display,windowId);
+	glv_window = _glvGetWindowFromId(glv_display,windowId);
 
 	if(glv_window == NULL){
 		return (GLV_ERROR);
@@ -1996,7 +2133,7 @@ int _glvOnFocus(glvDisplay glv_dpy,int focus_stat,glvWiget in_Wiget)
 	sheetId  = glv_display->kb_input_sheetId;
 	wigetId  = glv_display->kb_input_wigetId;
 
-	glv_window = _glvGetWindow(glv_display,windowId);
+	glv_window = _glvGetWindowFromId(glv_display,windowId);
 
 	if(glv_window == NULL){
 		return (GLV_ERROR);
@@ -2134,13 +2271,24 @@ void glvTerminateTimer(void)
 	pthreadTerminateTimer();
 }
 
-int glvCreateTimer(glvWindow glv_win,int group,int id,int type,int mTime)
+int glvCreate_mTimer(glvWindow glv_win,int group,int id,int type,int mTime)
 {
 	GLV_WINDOW_t *glv_window;
 	glv_window = (GLV_WINDOW_t*)glv_win;
 	int rc;
 
-	rc = pthreadCreateTimer(glv_window->ctx.threadId,&glv_window->ctx.queue,GLV_ON_TIMER,glv_window->instance.Id,group,id,type,mTime);
+	rc = pthreadCreate_mTimer(glv_window->ctx.threadId,&glv_window->ctx.queue,GLV_ON_TIMER,glv_window->instance.Id,group,id,type,mTime);
+
+	return(rc);
+}
+
+int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,struct timespec *reqWaitTime)
+{
+	GLV_WINDOW_t *glv_window;
+	glv_window = (GLV_WINDOW_t*)glv_win;
+	int rc;
+
+	rc = pthreadCreate_uTimer(glv_window->ctx.threadId,&glv_window->ctx.queue,GLV_ON_TIMER,glv_window->instance.Id,group,id,type,reqWaitTime);
 
 	return(rc);
 }
@@ -2228,7 +2376,7 @@ int glvWindow_isAliveWindow(void *glv_instance,glvInstanceId windowId)
 		return(GLV_INSTANCE_DEAD);
 	}
 
-	window = _glvGetWindow(glv_dpy,windowId);
+	window = _glvGetWindowFromId(glv_dpy,windowId);
 
 	if(window == NULL){
 		return(GLV_INSTANCE_DEAD);

@@ -554,7 +554,7 @@ void _glv_wiget_focus_cb(GLV_WINDOW_t *glv_window,glvInstanceId sheetId,glvInsta
 	if(glv_window == NULL) return;
 
 	if(in_windowId != 0){
-		glv_in_window = _glvGetWindow(glv_window->glv_dpy,in_windowId);
+		glv_in_window = _glvGetWindowFromId(glv_window->glv_dpy,in_windowId);
 	}
 	if(glv_in_window != NULL){
 		glv_sheet = glv_in_window->active_sheet;

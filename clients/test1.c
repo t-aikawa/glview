@@ -481,7 +481,7 @@ void part_window_test(glvWindow glv_frame_window)
 	}
 }
 
-int test_keyboard_handle_key(unsigned int key,unsigned int state)
+int test_keyboard_handle_key(unsigned int key,unsigned int modifiers,unsigned int state)
 {
     //printf("Key is %d state is %d\n", key, state);
     if(state == GLV_KEYBOARD_KEY_STATE_PRESSED){
@@ -517,7 +517,7 @@ int test_keyboard_handle_key(unsigned int key,unsigned int state)
 			break;
     	}
     }
-    return(0);
+    return(GLV_OK);
 }
 
 void test_set_pulldownMenu(glvWindow frame)

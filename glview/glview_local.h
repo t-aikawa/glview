@@ -56,6 +56,7 @@ extern "C" {
 #define GLV_ON_KEY_INPUT	    (13)
 #define GLV_ON_FOCUS		    (14)
 #define GLV_ON_END_DRAW		    (15)
+#define GLV_ON_KEY			    (16)
 #define GLV_ON_TERMINATE	    (99)
 
 #define GLV_KeyPress		(2)
@@ -77,6 +78,7 @@ typedef struct _glv_window_event_func {
 	GLV_WINDOW_EVENT_FUNC_cursor_t			cursor;
 	GLV_WINDOW_EVENT_FUNC_userMsg_t			userMsg;
 	GLV_WINDOW_EVENT_FUNC_action_t			action;
+	GLV_WINDOW_EVENT_FUNC_key_t				key;
 	GLV_WINDOW_EVENT_FUNC_endDraw_t			endDraw;
 	GLV_WINDOW_EVENT_FUNC_terminate_t		terminate;
 } GLV_WINDOW_EVENT_FUNC_t;
@@ -164,6 +166,7 @@ typedef struct _glv_display {
 	glvInstanceId			kb_input_sheetId;
 	glvInstanceId			kb_input_wigetId;
 	int						ins_mode;
+	glvInstanceId			toplevel_active_frameId;
 	int						(*ime_setCandidatePotition)(int candidate_pos_x,int candidate_pos_y);
 } GLV_DISPLAY_t;
 
@@ -204,6 +207,10 @@ typedef struct _glv_window {
 	int			toplevel_unset_maximized_width;
 	int			toplevel_unset_maximized_height;
 	int			flag_surface_configure;		// 最初に surface の configure イベントが呼ばれた
+	int			flag_toplevel_configure;	// 最初に toplevel の configure イベントが呼ばれた
+	int			req_toplevel_resize;
+	int			req_toplevel_inner_width;
+	int			req_toplevel_inner_height;
 	GLV_FRAME_INFO_t	frameInfo;
 	/* --------------------------- */
 	// for debug
@@ -302,6 +309,7 @@ struct _glvinput
 	// ------------------------------------
 	struct xkb_keymap	*xkb_keymap;
 	struct xkb_state	*xkb_state;
+	xkb_mod_mask_t		modifiers;
 	xkb_mod_mask_t		shift_mask;
 	xkb_mod_mask_t		lock_mask;
 	xkb_mod_mask_t		control_mask;
@@ -386,6 +394,7 @@ int glvOnActivate(glvWindow glv_win);
 int _glvOnMousePointer(void *glv_instance,int type,glvTime time,int x,int y,int pointer_left_stat);
 int _glvOnMouseButton(void *glv_instance,int type,glvTime time,int x,int y,int pointer_stat);
 int _glvOnMouseAxis(void *glv_instance,int type,glvTime time,int value);
+int _glvOnKey(glvWindow glv_win,unsigned int key,unsigned int modifiers,unsigned int state);
 int _glvOnTextInput(glvDisplay glv_dpy,int kind,int state,uint32_t kyesym,int *utf32,uint8_t *attr,int length);
 int _glvOnFocus(glvDisplay glv_dpy,int focus_stat,glvWiget in_Wiget);
 int _glvOnEndDraw(glvWindow glv_win,glvTime time);
@@ -426,7 +435,7 @@ int _glvCreateGarbageBox(void);
 void _glvDestroyGarbageBox(void);
 int _glvGcGarbageBox(void);
 
-GLV_WINDOW_t *_glvGetWindow(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId);
+GLV_WINDOW_t *_glvGetWindowFromId(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId);
 
 // ibus
 int glv_ime_startIbus(struct _glvinput *glv_input);

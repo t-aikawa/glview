@@ -176,6 +176,19 @@ extern "C" {
 #define GLV_KEY_STATE_IM_HIDE		(3)
 #define GLV_KEY_STATE_IM_RESET		(4)
 
+#define GLV_SHIFT_MASK		(1 << 0)
+#define GLV_LOCK_MASK		(1 << 1)
+#define GLV_CONTROL_MASK	(1 << 2)
+#define GLV_MOD1_MASK		(1 << 3)
+#define GLV_MOD2_MASK		(1 << 4)
+#define GLV_MOD3_MASK		(1 << 5)
+#define GLV_MOD4_MASK		(1 << 6)
+#define GLV_MOD5_MASK		(1 << 7)
+#define GLV_SUPER_MASK		(1 << 26)
+#define GLV_HYPER_MASK		(1 << 27)
+#define GLV_META_MASK		(1 << 28)
+#define GLV_MODIFIER_MASK	(0x5f001fff)
+
 //-----------------------------------
 // 型定義
 //-----------------------------------
@@ -294,6 +307,7 @@ typedef int (*GLV_WINDOW_EVENT_FUNC_gesture_t)(glvWindow glv_win,int eventType,i
 typedef int (*GLV_WINDOW_EVENT_FUNC_cursor_t)(glvWindow glv_win,int width, int height,int pos_x,int pos_y);
 typedef int (*GLV_WINDOW_EVENT_FUNC_userMsg_t)(glvWindow glv_win,int kind,void *data);
 typedef int (*GLV_WINDOW_EVENT_FUNC_action_t)(glvWindow glv_win,int action,glvInstanceId functionId);
+typedef int (*GLV_WINDOW_EVENT_FUNC_key_t)(glvWindow glv_win,unsigned int key,unsigned int modifiers,unsigned int state);
 typedef int (*GLV_WINDOW_EVENT_FUNC_endDraw_t)(glvWindow glv_win,glvTime time);
 typedef int (*GLV_WINDOW_EVENT_FUNC_terminate_t)(glvWindow glv_win);
 
@@ -328,6 +342,7 @@ struct glv_frame_listener {
 	int									back;
 	int									shadow;
 	GLV_WINDOW_EVENT_FUNC_action_t		action;
+	GLV_WINDOW_EVENT_FUNC_key_t			key;
 };
 
 struct glv_window_listener {
@@ -378,7 +393,7 @@ struct glv_wiget_listener {
 };
 
 typedef struct _glvinputfunc {
-	int (*keyboard_function_key)(unsigned int key,unsigned int state);
+	int (*keyboard_function_key)(unsigned int key,unsigned int modifiers,unsigned int state);
 	int (*touch_down)(int pointer_sx,int pointer_sy);
 	int (*touch_up)(int pointer_sx,int pointer_sy);
 } GLVINPUTFUNC_t;
@@ -446,6 +461,8 @@ glvTime glvWindow_getLastTime(glvWindow glv_win);
 char *glvWindow_getWindowName(glvWindow glv_win);
 int glvReqSwapBuffers(glvWindow glv_win);
 
+int glvWindow_setTitle(glvWindow glv_win,const char *title);
+int glvWindow_setInnerSize(glvWindow glv_win,int width, int height);
 int glvOnReShape(glvWindow glv_win,int x, int y,int width, int height);
 int glvOnReDraw(glvWindow glv_win);
 int glvOnUpdate(glvWindow glv_win);
@@ -453,7 +470,8 @@ int glvOnGesture(glvWindow glv_win,int eventType,int x,int y,int distance_x,int 
 int glvOnAction(void *glv_instance,int action,glvInstanceId selectId);
 int glvOnUserMsg(glvWindow glv_win,int kind,void *data,size_t size);
 
-int glvCreateTimer(glvWindow glv_win,int group,int id,int type,int mTime);
+int glvCreate_mTimer(glvWindow glv_win,int group,int id,int type,int mTime);
+int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,struct timespec *reqWaitTime);
 int glvStartTimer(glvWindow glv_win,int id);
 int glvStopTimer(glvWindow glv_win,int id);
 
@@ -476,6 +494,7 @@ void glvWindow_setHandler_cursor(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_cursor_
 void glvWindow_setHandler_userMsg(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_userMsg_t userMsg);
 void glvWindow_setHandler_terminate(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_terminate_t terminate);
 void glvWindow_setHandler_action(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_action_t action);
+void glvWindow_setHandler_key(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_key_t key);
 void glvWindow_setHandler_endDraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_endDraw_t endDraw);
 
 void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*class);

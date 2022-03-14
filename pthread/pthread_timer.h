@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+#include <time.h>
 #include "pthread_msq.h"
 
 #define PTHREAD_TIMER_ONLY_ONCE		(1)
@@ -40,7 +41,8 @@ extern "C" {
 int pthreadCheckTimer(pthread_t threadId,int id,int count);
 void pthreadInitializeTimer(void);
 void pthreadTerminateTimer(void);
-int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,int mTime);
+int pthreadCreate_uTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,struct timespec *reqWaitTime);
+int pthreadCreate_mTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,int mTime);
 int pthreadStartTimer(pthread_t threadId,int id);
 int pthreadStopTimer(pthread_t threadId,int id);
 

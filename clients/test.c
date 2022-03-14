@@ -37,8 +37,8 @@ glvDisplay	glv_dpy;
 glvWindow	glv_frame_window = NULL;
 glvWindow	glv_main_window = NULL;
 
-extern int sample_hmi_keyboard_function_key(unsigned int key,unsigned int state);
-extern int test_keyboard_handle_key(unsigned int key,unsigned int state);
+extern int sample_hmi_keyboard_function_key(glvWindow glv_win,unsigned int key,unsigned int modifiers,unsigned int state);
+extern int test_keyboard_handle_key(unsigned int key,unsigned int modifiers,unsigned int state);
 extern const struct glv_window_listener *simple_egl_main_window_listener;
 void test_set_pulldownMenu(glvWindow frame);
 /* ----------------------------------------------------------------------- */
@@ -79,15 +79,15 @@ int main_frame_action(glvWindow glv_win,int action,glvInstanceId functionId)
 			glv_dpy = glv_getDisplay(glv_win);
 			glvEscapeEventLoop(glv_dpy);
 		}else if(functionId == 1005){
-			sample_hmi_keyboard_function_key(XKB_KEY_F5,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			sample_hmi_keyboard_function_key(glv_win,XKB_KEY_F5,0,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}else if(functionId == 1006){
-			sample_hmi_keyboard_function_key(XKB_KEY_F6,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			sample_hmi_keyboard_function_key(glv_win,XKB_KEY_F6,0,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}else if(functionId == 1007){
-			sample_hmi_keyboard_function_key(XKB_KEY_F7,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			sample_hmi_keyboard_function_key(glv_win,XKB_KEY_F7,0,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}else if(functionId == 1008){
-			sample_hmi_keyboard_function_key(XKB_KEY_F8,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			sample_hmi_keyboard_function_key(glv_win,XKB_KEY_F8,0,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}else if(functionId == 1009){
-			sample_hmi_keyboard_function_key(XKB_KEY_F9,GLV_KEYBOARD_KEY_STATE_PRESSED);
+			sample_hmi_keyboard_function_key(glv_win,XKB_KEY_F9,0,GLV_KEYBOARD_KEY_STATE_PRESSED);
 		}
 	}
 	return(GLV_OK);
@@ -120,11 +120,6 @@ int main(int argc, char *argv[])
 		return(-1);
 	}
 
-	/* ----------------------------------------------------------------------------------------------- */
-	glv_input_func.keyboard_function_key	= sample_hmi_keyboard_function_key;
-	glv_input_func.touch_down   			= NULL;
-	glv_input_func.touch_up     			= NULL;
-
 	glvCreateFrameWindow(glv_dpy,main_frame_window_listener,&glv_frame_window,"frame window",APP_NAME_TEXT,WinWidth, WinHeight);
 
 	/* ----------------------------------------------------------------------------------------------- */
@@ -145,10 +140,12 @@ int main(int argc, char *argv[])
 }
 
 int sample_hmi_keyboard_function_key(
+					glvWindow glv_win,
                     unsigned int key,
+					unsigned int modifiers,
                     unsigned int state)
 {
-    //printf("Key is %d state is %d\n", key, state);
+    //printf("Key is %d modifiers %d state is %d\n", key, modifiers, state);
     if(state == GLV_KEYBOARD_KEY_STATE_PRESSED){
     	switch(key){
 		case XKB_KEY_F1: 		// XKB_KEY_F1
@@ -160,9 +157,9 @@ int sample_hmi_keyboard_function_key(
 		case XKB_KEY_F8:		// XKB_KEY_F8
 		case XKB_KEY_F9:		// XKB_KEY_F9
 		default:
-			test_keyboard_handle_key(key,state);
+			test_keyboard_handle_key(key,modifiers,state);
 			break;
     	}
     }
-    return(0);
+    return(GLV_OK);
 }

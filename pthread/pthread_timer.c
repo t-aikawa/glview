@@ -22,6 +22,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
@@ -40,9 +42,9 @@ typedef struct _pthreadTimerTable {
 	int 	id;
 	int 	type;
 	int 	active;
-	int		mTime;	/* タイマーの待ち時間 */
+	struct timespec reqWaitTime;	/* タイマーの経過待ち時間 */
 	long	reqCount;
-	struct timespec ts; /* 待ち時間の絶対値　mTime生成する */
+	struct timespec absWaitTime;	/* 絶対待ち時間　reqWaitTimeと現在時間から生成する */
 	pthread_msq_id_t	*queue;
 } PTHREADTIMERTABLE_t;
 
@@ -55,20 +57,22 @@ static PTHREADTIMERTABLE_t pthread_timer_table[PTHREAD_TIMER_TABLE_MAX];
 /* ----------------------------------------------------------------- */
 static pthread_mutex_t pthread_timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int pthreadCalcTime(struct timespec *start_ts,int mTime,struct timespec *stop_ts)
+static int pthreadCalcAbsWaitTime(struct timespec *crtTime,struct timespec *reqWaitTime,struct timespec *absWaitTime)
 {
+#if 0
 	time_t tv_sec;
 	__syscall_slong_t tv_nsec;
 
 	tv_sec  = mTime / 1000;
 	tv_nsec = (mTime % 1000) * 1000000;
+#endif
 
-	stop_ts->tv_sec  = start_ts->tv_sec + tv_sec + (start_ts->tv_nsec + tv_nsec) / 1000000000;
-	stop_ts->tv_nsec = (start_ts->tv_nsec + tv_nsec) % 1000000000;
+	absWaitTime->tv_sec  = crtTime->tv_sec + reqWaitTime->tv_sec + (crtTime->tv_nsec + reqWaitTime->tv_nsec) / 1000000000;
+	absWaitTime->tv_nsec = (crtTime->tv_nsec + reqWaitTime->tv_nsec) % 1000000000;
 	return(PTHREAD_TIMER_OK);
 }
 
-int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,int mTime)
+int pthreadCreate_uTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,struct timespec *reqWaitTime)
 {
 	int i;
 
@@ -93,9 +97,10 @@ int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userDat
 			pthread_timer_table[i].userData2	= userData2;
 			pthread_timer_table[i].type			= type;
 			pthread_timer_table[i].active		= PTHREAD_TIMER_STOP;
-			pthread_timer_table[i].mTime		= mTime;
-			pthread_timer_table[i].ts.tv_sec	= 0;
-			pthread_timer_table[i].ts.tv_nsec	= 0;
+			pthread_timer_table[i].reqWaitTime.tv_sec	= reqWaitTime->tv_sec;
+			pthread_timer_table[i].reqWaitTime.tv_nsec	= reqWaitTime->tv_nsec;
+			pthread_timer_table[i].absWaitTime.tv_sec	= 0;
+			pthread_timer_table[i].absWaitTime.tv_nsec	= 0;
 			//printf("pthreadCreateTimer:timer reuse  [%d] \n",i);
 			pthread_mutex_unlock(&pthread_timer_mutex);
 			return(PTHREAD_TIMER_OK);
@@ -112,9 +117,10 @@ int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userDat
 			pthread_timer_table[i].id			= id;
 			pthread_timer_table[i].type			= type;
 			pthread_timer_table[i].active		= PTHREAD_TIMER_STOP;
-			pthread_timer_table[i].mTime		= mTime;
-			pthread_timer_table[i].ts.tv_sec	= 0;
-			pthread_timer_table[i].ts.tv_nsec	= 0;
+			pthread_timer_table[i].reqWaitTime.tv_sec	= reqWaitTime->tv_sec;
+			pthread_timer_table[i].reqWaitTime.tv_nsec	= reqWaitTime->tv_nsec;
+			pthread_timer_table[i].absWaitTime.tv_sec	= 0;
+			pthread_timer_table[i].absWaitTime.tv_nsec	= 0;
 			pthread_timer_table[i].queue		= queue;
 			//printf("pthreadCreateTimer:timer create [%d] \n",i);
 			pthread_mutex_unlock(&pthread_timer_mutex);
@@ -123,14 +129,26 @@ int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userDat
 	}
 
 	pthread_mutex_unlock(&pthread_timer_mutex);
-	fprintf(stderr,"pthreadCreateTimer:timer tavle over [%d] \n",i);
+	fprintf(stderr,"pthreadCreateTimer:timer table over [%d] \n",i);
 	/* table over */
 	return(PTHREAD_TIMER_ERROR);
 }
 
+int pthreadCreate_mTimer(pthread_t threadId,pthread_msq_id_t *queue,size_t userData1,size_t userData2,int group,int id,int type,int mTime)
+{
+	struct timespec reqWaitTime;
+	int rc;
+
+	reqWaitTime.tv_sec  = mTime / 1000;
+	reqWaitTime.tv_nsec = (mTime % 1000) * 1000000;
+
+	rc = pthreadCreate_uTimer(threadId,queue,userData1,userData2,group,id,type,&reqWaitTime);
+	return(rc);
+}
+
 int pthreadStartTimer(pthread_t threadId,int id)
 {
-    static struct timespec ts;
+    static struct timespec crtTime;
 	int i;
 
 	pthread_mutex_lock(&pthread_timer_mutex);
@@ -140,8 +158,8 @@ int pthreadStartTimer(pthread_t threadId,int id)
 		if((pthread_timer_table[i].id == id)&&
 			(pthread_equal(pthread_timer_table[i].threadId,threadId)))
 		{
-			if (clock_gettime(CLOCK_REALTIME, &ts) == 0){
-			    pthreadCalcTime(&ts,pthread_timer_table[i].mTime,&pthread_timer_table[i].ts);
+			if (clock_gettime(CLOCK_REALTIME, &crtTime) == 0){
+			    pthreadCalcAbsWaitTime(&crtTime,&pthread_timer_table[i].reqWaitTime,&pthread_timer_table[i].absWaitTime);
 				pthread_timer_table[i].active = PTHREAD_TIMER_START;
 				sem_post(&timer_sem); /* タイマーの待を解除 */
 			}
@@ -253,12 +271,12 @@ int pthreadDestroyTimer(void)
 	return(PTHREAD_TIMER_OK);
 }
 
-int pthreadGetTime(struct timespec *ts)
+int pthreadGetWaitAbsTime(struct timespec *absWaitTime)
 {
 	int i;
 	long min_sec,min_nsec;
 
-    clock_gettime(CLOCK_REALTIME, ts);
+    clock_gettime(CLOCK_REALTIME, absWaitTime);
 
 	pthread_mutex_lock(&pthread_timer_mutex);
 
@@ -270,15 +288,15 @@ int pthreadGetTime(struct timespec *ts)
 		if(pthread_timer_table[i].active == PTHREAD_TIMER_START)
 		{
 			if(min_sec < 0){
-				min_sec = pthread_timer_table[i].ts.tv_sec;
-				min_nsec = pthread_timer_table[i].ts.tv_nsec;
+				min_sec = pthread_timer_table[i].absWaitTime.tv_sec;
+				min_nsec = pthread_timer_table[i].absWaitTime.tv_nsec;
 			}else{
-				if(min_sec > pthread_timer_table[i].ts.tv_sec){
-					min_sec = pthread_timer_table[i].ts.tv_sec;
-					min_nsec = pthread_timer_table[i].ts.tv_nsec;
-				}else if(min_sec == pthread_timer_table[i].ts.tv_sec){
-					if(min_nsec > pthread_timer_table[i].ts.tv_nsec){
-						min_nsec = pthread_timer_table[i].ts.tv_nsec;
+				if(min_sec > pthread_timer_table[i].absWaitTime.tv_sec){
+					min_sec = pthread_timer_table[i].absWaitTime.tv_sec;
+					min_nsec = pthread_timer_table[i].absWaitTime.tv_nsec;
+				}else if(min_sec == pthread_timer_table[i].absWaitTime.tv_sec){
+					if(min_nsec > pthread_timer_table[i].absWaitTime.tv_nsec){
+						min_nsec = pthread_timer_table[i].absWaitTime.tv_nsec;
 					}
 				}
 			}
@@ -286,22 +304,22 @@ int pthreadGetTime(struct timespec *ts)
 	}
 	pthread_mutex_unlock(&pthread_timer_mutex);
 	if(min_sec == -1){
-		ts->tv_sec += 60;
+		absWaitTime->tv_sec += 60;
 		return(PTHREAD_TIMER_OK);
 	}
-	ts->tv_sec  = min_sec;
-	ts->tv_nsec = min_nsec;
+	absWaitTime->tv_sec  = min_sec;
+	absWaitTime->tv_nsec = min_nsec;
 	return(PTHREAD_TIMER_OK);
 }
 
 void pthreadSendTime(void)
 {
-    static struct timespec crt_ts;
+    static struct timespec crtTime;
 	pthread_msq_msg_t smsg;
 	pthread_msq_id_t *queue;
 	int i,time_flag;
 
-	clock_gettime(CLOCK_REALTIME, &crt_ts);
+	clock_gettime(CLOCK_REALTIME, &crtTime);
 
 	pthread_mutex_lock(&pthread_timer_mutex);
 
@@ -310,10 +328,10 @@ void pthreadSendTime(void)
 		time_flag = 0;
 		if(pthread_timer_table[i].active == PTHREAD_TIMER_START)
 		{
-			if(crt_ts.tv_sec > pthread_timer_table[i].ts.tv_sec){
+			if(crtTime.tv_sec > pthread_timer_table[i].absWaitTime.tv_sec){
 				time_flag = 1;
-			}else if(crt_ts.tv_sec == pthread_timer_table[i].ts.tv_sec){
-				if(crt_ts.tv_nsec > pthread_timer_table[i].ts.tv_nsec){
+			}else if(crtTime.tv_sec == pthread_timer_table[i].absWaitTime.tv_sec){
+				if(crtTime.tv_nsec > pthread_timer_table[i].absWaitTime.tv_nsec){
 					time_flag = 1;
 				}
 			}
@@ -321,7 +339,7 @@ void pthreadSendTime(void)
 				if(pthread_timer_table[i].type == PTHREAD_TIMER_ONLY_ONCE){
 					pthread_timer_table[i].active = PTHREAD_TIMER_STOP;
 				}else{
-					pthreadCalcTime(&crt_ts,pthread_timer_table[i].mTime,&pthread_timer_table[i].ts);
+					pthreadCalcAbsWaitTime(&crtTime,&pthread_timer_table[i].reqWaitTime,&pthread_timer_table[i].absWaitTime);
 			    }
 				smsg.data[0] = pthread_timer_table[i].userData1;
 				smsg.data[1] = pthread_timer_table[i].userData2;
@@ -345,14 +363,14 @@ void pthreadSendTime(void)
 
 void *pthreadTimerProc(void* no_arg)
 {
-    static struct timespec ts;
+    static struct timespec absWaitTime;
     int rc;
 
 	do{
-	    pthreadGetTime(&ts);
+	    pthreadGetWaitAbsTime(&absWaitTime);
 
 	    //printf("pthreadTimerProc:sem_timedwait():call\n");
-	    while ((rc = sem_timedwait(&timer_sem, &ts)) == -1 && errno == EINTR){
+	    while ((rc = sem_timedwait(&timer_sem, &absWaitTime)) == -1 && errno == EINTR){
 			if(running == 0){
 				//printf("pthreadTimerProc terminate.\n");
 				return(NULL);
@@ -399,9 +417,10 @@ void pthreadInitializeTimer(void)
 		pthread_timer_table[i].type			= 0;
 		pthread_timer_table[i].active		= PTHREAD_TIMER_STOP;
 		pthread_timer_table[i].reqCount		= 0;
-		pthread_timer_table[i].mTime		= 0;
-		pthread_timer_table[i].ts.tv_sec	= 0;
-		pthread_timer_table[i].ts.tv_nsec	= 0;
+		pthread_timer_table[i].reqWaitTime.tv_sec	= 0;
+		pthread_timer_table[i].reqWaitTime.tv_nsec	= 0;
+		pthread_timer_table[i].absWaitTime.tv_sec	= 0;
+		pthread_timer_table[i].absWaitTime.tv_nsec	= 0;
 		pthread_timer_table[i].queue		= NULL;
 	}
     if (sem_init(&timer_sem, 0, 0) == -1){
@@ -416,6 +435,8 @@ void pthreadInitializeTimer(void)
 
 		return;
 	}
+
+	pthread_setname_np(timer_threadId,"pthread_timer");
 
 	return;
 }

@@ -762,11 +762,13 @@ static int frame_update(glvWindow glv_win,int drawStat)
 	glvFont_SetStyle(GLV_FONT_NAME_NORMAL,16,0.0f,0,GLV_FONT_NAME | GLV_FONT_SIZE | GLV_FONT_CENTER);
 	glvFont_SetPosition(frameInfo->frame_width/2,(2+frameInfo->top_name_size/2 + frameInfo->top_shadow_size + frameInfo->top_edge_size/2));
 
+	pthread_mutex_lock(&glv_window->window_mutex);			// window
 	GLV_IF_DEBUG_MSG{
 		glvFont_printf("%s(%d)",glv_window->title,glv_window->drawCount+1);
 	}else{
 		glvFont_printf("%s",glv_window->title);
 	}
+	pthread_mutex_unlock(&glv_window->window_mutex);		// window
 
 	{   // edge
 		GLV_T_POINT_t point[2];
@@ -945,6 +947,7 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 	if(listener != NULL){
 		glvWindow_setHandler_start((glvWindow)glv_window,listener->start);
 		glvWindow_setHandler_action((glvWindow)glv_window,listener->action);
+		glvWindow_setHandler_key((glvWindow)glv_window,listener->key);
 		glvWindow_setHandler_configure((glvWindow)glv_window,listener->configure);
 		glvWindow_setHandler_terminate((glvWindow)glv_window,listener->terminate);
 	}
