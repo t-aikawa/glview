@@ -255,8 +255,8 @@ typedef struct _glv_sheet {
 	GLV_DISPLAY_t		*glv_dpy;
 	GLV_WINDOW_t		*glv_window;
 	glvInstanceId		pointer_focus_wiget_Id;
-	int					pointer_focus_wiget_x;
-	int					pointer_focus_wiget_y;
+//	int					pointer_focus_wiget_x;
+//	int					pointer_focus_wiget_y;
 	glvInstanceId		select_wiget_Id;
 	int					select_wiget_x;
 	int					select_wiget_y;
@@ -462,6 +462,28 @@ int glv_r_get_value(struct _glv_r_value **link,void *instance,char *key,char *ty
 int glv_r_free_value__list(struct _glv_r_value **link);
 
 int _glv_destroyAllWindow(GLV_DISPLAY_t *glv_dpy);
+
+void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *class);
+void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t init);
+void glvWindow_setHandler_start(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_start_t start);
+void glvWindow_setHandler_configure(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_configure_t configure);
+void glvWindow_setHandler_reshape(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_reshape_t reshape);
+void glvWindow_setHandler_redraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_redraw_t redraw);
+void glvWindow_setHandler_update(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_update_t update);
+void glvWindow_setHandler_timer(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_timer_t timer);
+void glvWindow_setHandler_mousePointer(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mousePointer_t mousePointer);
+void glvWindow_setHandler_mouseButton(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mouseButton_t mouseButton);
+void glvWindow_setHandler_mouseAxis(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mouseAxis_t mouseAxis);
+void glvWindow_setHandler_gesture(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_gesture_t gesture);
+void glvWindow_setHandler_cursor(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_cursor_t cursor);
+void glvWindow_setHandler_userMsg(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_userMsg_t userMsg);
+void glvWindow_setHandler_terminate(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_terminate_t terminate);
+void glvWindow_setHandler_action(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_action_t action);
+void glvWindow_setHandler_key(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_key_t key);
+void glvWindow_setHandler_endDraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_endDraw_t endDraw);
+
+void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*class);
+void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *class);
 
 #ifdef __cplusplus
 }

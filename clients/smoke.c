@@ -357,8 +357,8 @@ glvWindow	glv_main_window = NULL;
 int main_frame_start(glvWindow glv_frame_window,int width, int height)
 {
 	printf("main_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
-	glvCreateWindow(glv_frame_window,smoke_window_listener,&glv_main_window,"smoke window",
-			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT | GLV_WINDOW_ATTR_POINTER_MOTION);
+	glv_main_window = glvCreateWindow(glv_frame_window,smoke_window_listener,"smoke window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT | GLV_WINDOW_ATTR_POINTER_MOTION,NULL);
 	glvOnReDraw(glv_main_window);
 	return(GLV_OK);
 }
@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
 		return(-1);
 	}
 
-	glvCreateFrameWindow(glv_dpy,main_frame_window_listener,&glv_frame_window,"smoke frame",APP_NAME_TEXT,WinWidth, WinHeight);
+	glv_frame_window = glvCreateFrameWindow(glv_dpy,main_frame_window_listener,"smoke frame",APP_NAME_TEXT,WinWidth, WinHeight,NULL);
 
 	/* ----------------------------------------------------------------------------------------------- */
 	glvEnterEventLoop(glv_dpy);		// event loop

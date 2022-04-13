@@ -563,8 +563,8 @@ static int wiget_pullDown_menu_mousePointer(glvWindow glv_win,glvSheet sheet,glv
 			user_data->selectPullMenu = -1;
 			if(user_data->pullMenu[focus].num > 0){
 				user_data->select = focus;
-				user_data->window_pull_down_list_id = glvCreateChildWindow(glv_win,pullDown_menu_window_listener,&user_data->window_pull_down_list,"list window",
-								offset_x, offset_y, frame2_width, frame2_height,GLV_WINDOW_ATTR_DEFAULT);
+				user_data->window_pull_down_list = glvCreateChildWindow(glv_win,pullDown_menu_window_listener,"list window",
+								offset_x, offset_y, frame2_width, frame2_height,GLV_WINDOW_ATTR_DEFAULT,&user_data->window_pull_down_list_id);
 				glv_allocUserData(user_data->window_pull_down_list,sizeof(WINDOW_PULLDOWN_MENU_USER_DATA_t));
 				WINDOW_PULLDOWN_MENU_USER_DATA_t *pullDown_menu_window_user_data = glv_getUserData(user_data->window_pull_down_list);
 				pullDown_menu_window_user_data->menu  = &user_data->pullMenu[focus];

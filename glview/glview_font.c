@@ -871,7 +871,7 @@ int glvFont_DrawUTF32String(int *utf32_string,int utf32_length,int16_t *advance_
 	return(font_draw_info->bitmapFont.strHeight + font_draw_info->fontInfo.lineSpace);
 }
 
-static int glvFont_DrawUTF8String(char* pStr)
+int glvFont_DrawUTF8String(char* pStr)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	float spotX = 0.0f;
@@ -988,14 +988,16 @@ static int glvFont_DrawUTF8String(char* pStr)
 int glvFont_printf(char * fmt,...)
 {
 	int rc;
-	char str[256];
+	char str[1024];
     va_list args;
 
     va_start( args, fmt );
 
-    rc = vsprintf(str, fmt, args );
+    rc = vsnprintf(str, 1024, fmt, args );
 
-	glvFont_DrawUTF8String(str);
+	if(rc != -1){
+		glvFont_DrawUTF8String(str);
+	}
 
     va_end( args );
 

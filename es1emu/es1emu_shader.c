@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+//#include <GLES2/gl2ext.h>
 #include "es1emu_emulation.h"
 #include "es1emu_shader.h"
 

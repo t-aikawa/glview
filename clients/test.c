@@ -53,8 +53,8 @@ int main_frame_start(glvWindow glv_frame_window,int width, int height)
 	printf("main_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
 
 	test_set_pulldownMenu(glv_frame_window);
-	glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,&glv_main_window,"simple-egl-window",
-			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glv_main_window = glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,"simple-egl-window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT,NULL);
 	glvOnReDraw(glv_main_window);
 
 	return(GLV_OK);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 		return(-1);
 	}
 
-	glvCreateFrameWindow(glv_dpy,main_frame_window_listener,&glv_frame_window,"frame window",APP_NAME_TEXT,WinWidth, WinHeight);
+	glv_frame_window = glvCreateFrameWindow(glv_dpy,main_frame_window_listener,"frame window",APP_NAME_TEXT,WinWidth, WinHeight,NULL);
 
 	/* ----------------------------------------------------------------------------------------------- */
 	glvEnterEventLoop(glv_dpy);		// event loop

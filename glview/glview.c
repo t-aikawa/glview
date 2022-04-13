@@ -36,7 +36,11 @@
 #include "weston-client-window.h"
 #include "glview_local.h"
 
-#define GLV_NAME_TEXT	"glview:version 0.1.14(" __DATE__ ")"
+// ----------------------------------------------------
+#define GLV_VERSION_MAJOR	(0)
+#define GLV_VERSION_MINOR	(1)
+#define GLV_VERSION_PATCH	(15)
+// ----------------------------------------------------
 
 #define GLV_OPENGL_ES1_API	(1)
 #define GLV_OPENGL_ES2_API	(2)
@@ -59,6 +63,19 @@ static int _glv_debug_flag_validity_list[] = {
 	GLV_DEBUG_WIGET,
 	//GLV_DEBUG_DATA_DEVICE,
 };
+
+void glvGetVersion(int *major,int *minor,int *patch)
+{
+	if(major != NULL){
+		*major = GLV_VERSION_MAJOR;
+	}
+	if(minor != NULL){
+		*minor = GLV_VERSION_MINOR;
+	}
+	if(patch != NULL){
+		*patch = GLV_VERSION_PATCH;
+	}
+}
 
 void glvSetDebugFlag(int flag){
 	int i,n;
@@ -188,7 +205,7 @@ glvDisplay glvOpenDisplay(char *dpyName)
 	}
 
 	GLV_IF_DEBUG_VERSION printf("--------------------------------------------------------------------------\n");
-	GLV_IF_DEBUG_VERSION printf("%s\n",GLV_NAME_TEXT);
+	GLV_IF_DEBUG_VERSION printf("glview:version %d.%d.%d " "(" __DATE__ ")\n",GLV_VERSION_MAJOR,GLV_VERSION_MINOR,GLV_VERSION_PATCH);
 
 	glvGl_thread_safe_init();
 	glvFont_thread_safe_init();
@@ -692,43 +709,52 @@ int glvAllocWindowResource(glvDisplay glv_dpy,glvWindow *glv_win,char *name,cons
 	return(GLV_OK);
 }
 
-glvInstanceId glvCreateThreadWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr)
+glvWindow glvCreateThreadWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id)
 {
-	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvWindow glv_win;
+	GLV_WINDOW_t *glv_window;
 	glvDisplay glv_dpy = glv_getDisplay(parent);
 	int rc;
 
-	glvAllocWindowResource(glv_dpy,glv_win,name,listener);
-	glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvAllocWindowResource(glv_dpy,&glv_win,name,listener);
+	glv_window = (GLV_WINDOW_t*)glv_win;
 	rc = _glvCreateWindow(glv_window,name,GLV_TYPE_THREAD_WINDOW,NULL, x, y, width, height,parent,attr);
 	glvCreateThreadSurfaceView(glv_window);
 
-	return(glv_window->instance.Id);
+	if(id != NULL){
+		*id = glv_window->instance.Id;
+	}
+	return(glv_window);
 }
 
-glvInstanceId glvCreateChildWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr)
+glvWindow glvCreateChildWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id)
 {
-	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvWindow glv_win;
+	GLV_WINDOW_t *glv_window;
 	glvDisplay glv_dpy = glv_getDisplay(parent);
 	int rc;
 
-	glvAllocWindowResource(glv_dpy,glv_win,name,listener);
-	glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvAllocWindowResource(glv_dpy,&glv_win,name,listener);
+	glv_window = (GLV_WINDOW_t*)glv_win;
 	rc = _glvCreateWindow(glv_window,name,GLV_TYPE_CHILD_WINDOW,NULL, x, y, width, height,parent,attr);
 	_glvOnInit_for_childWindow((glvWindow)glv_window,glv_window->width,glv_window->height);
 
-	return(glv_window->instance.Id);
+	if(id != NULL){
+		*id = glv_window->instance.Id;
+	}
+	return(glv_window);
 }
 
-glvInstanceId glvCreateWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr)
+glvWindow glvCreateWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id)
 {
-	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvWindow glv_win;
+	GLV_WINDOW_t *glv_window;
 	GLV_WINDOW_t *parent_window = (GLV_WINDOW_t*)parent;
 	glvDisplay glv_dpy = glv_getDisplay(parent);
 	int rc;
 
-	glvAllocWindowResource(glv_dpy,glv_win,name,listener);
-	glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvAllocWindowResource(glv_dpy,&glv_win,name,listener);
+	glv_window = (GLV_WINDOW_t*)glv_win;
 
 	if(parent_window->windowType == GLV_TYPE_THREAD_FRAME){
 		rc = _glvCreateWindow(glv_window,name,GLV_TYPE_THREAD_WINDOW,NULL, x, y, width, height,parent,attr);
@@ -738,7 +764,10 @@ glvInstanceId glvCreateWindow(glvWindow parent,const struct glv_window_listener 
 		_glvOnInit_for_childWindow((glvWindow)glv_window,glv_window->width,glv_window->height);
 	}
 
-	return(glv_window->instance.Id);
+	if(id != NULL){
+		*id = glv_window->instance.Id;
+	}
+	return(glv_window);
 }
 
 void glvDestroyWindow(glvWindow *glv_win)
@@ -2282,13 +2311,17 @@ int glvCreate_mTimer(glvWindow glv_win,int group,int id,int type,int mTime)
 	return(rc);
 }
 
-int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,struct timespec *reqWaitTime)
+int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,int64_t tv_sec,int64_t tv_nsec)
 {
 	GLV_WINDOW_t *glv_window;
 	glv_window = (GLV_WINDOW_t*)glv_win;
+	struct timespec reqWaitTime;
 	int rc;
 
-	rc = pthreadCreate_uTimer(glv_window->ctx.threadId,&glv_window->ctx.queue,GLV_ON_TIMER,glv_window->instance.Id,group,id,type,reqWaitTime);
+	reqWaitTime.tv_sec  = tv_sec;
+	reqWaitTime.tv_nsec = tv_nsec;
+
+	rc = pthreadCreate_uTimer(glv_window->ctx.threadId,&glv_window->ctx.queue,GLV_ON_TIMER,glv_window->instance.Id,group,id,type,&reqWaitTime);
 
 	return(rc);
 }
@@ -2340,6 +2373,13 @@ int glvSelectDrawingWindow(glvWindow glv_win)
 	}
 
    return(GLV_OK);
+}
+
+glvWindow glvGetWindowFromId(glvDisplay glv_dpy,glvInstanceId windowId)
+{
+	GLV_WINDOW_t *window;
+	window = _glvGetWindowFromId((GLV_DISPLAY_t*)glv_dpy,windowId);
+	return(window);
 }
 
 int glvWindow_isAliveWindow(void *glv_instance,glvInstanceId windowId)
@@ -2774,25 +2814,41 @@ int glv_menu_setItem(GLV_W_MENU_t *menu,int n,char *text,int attr,int next,int f
   return(GLV_OK);
 }
 
-//	Ll - long , size_t
-//	Ii - int
-//	Pp - memory pointer
-//	Rr  - double
-//	Tt  - function pointer
-//	Cc  - GLV_SET_RGBA(r,g,b,a)
-//
-static int glv_r_is_typeChar2typeNo(char type_char,int *type)
+/*
+Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+Ss string			: GLV_R_VALUE_TYPE__STRING
+Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+*/
+int glv_r_is_typeChar2typeNo(char type_char,int *type)
 {
 	int rc = 1;
 	switch(type_char){
+		case 'Z':
+		case 'z':
+			*type = GLV_R_VALUE_TYPE__SIZE;	// 8byte: unsigned long , size_t
+			break;
 		case 'L':
 		case 'l':
-			*type = GLV_R_VALUE_TYPE__SIZE;	// 8byte: long , size_t
+			*type = GLV_R_VALUE_TYPE__INT64;	// 8byte: signed long
 			break;
 		case 'I':
 		case 'i':
-			*type = GLV_R_VALUE_TYPE__INT32;	// 4baye: int
+			*type = GLV_R_VALUE_TYPE__INT32;	// 4baye: signed int
 			break;
+		case 'U':
+		case 'u':
+			*type = GLV_R_VALUE_TYPE__UINT32;	// 4baye: unsigned int
+			break;
+		case 'C':
+		case 'c':
+			*type = GLV_R_VALUE_TYPE__COLOR;	// 8byte: function pointer
+			break;		
 		case 'S':
 		case 's':
 			*type = GLV_R_VALUE_TYPE__STRING;	// 8byte: string(UTF8)
@@ -2809,13 +2865,9 @@ static int glv_r_is_typeChar2typeNo(char type_char,int *type)
 		case 't':
 			*type = GLV_R_VALUE_TYPE__FUNCTION;	// 8byte: function pointer
 			break;
-		case 'C':
-		case 'c':
-			*type = GLV_R_VALUE_TYPE__COLOR;	// 8byte: function pointer
-			break;
 		default:
 			rc = 0;
-			*type = GLV_R_VALUE_TYPE__SIZE;		// unknown type
+			*type = GLV_R_VALUE_TYPE__NOTHING;	// unknown type
 			break;
 	}
 	return(rc);
@@ -2872,13 +2924,32 @@ int glv_r_set_value(struct _glv_r_value **link,void *instance,char *key,char *ty
 			printf("glv_r_set_value:type unmach. [%s] arg %d (%d != %d)\n",key,index+1,fp->n[index].type,type);
 			return(GLV_ERROR);
 		}
+		/*
+		Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+		Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+		Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+		Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+		Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+		Ss string			: GLV_R_VALUE_TYPE__STRING
+		Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+		Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+		Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+		*/
 		switch(type){
 			case GLV_R_VALUE_TYPE__SIZE:
 				fp->n[index].v.size = va_arg(args, size_t);
 				break;
-			case GLV_R_VALUE_TYPE__COLOR:
+			case GLV_R_VALUE_TYPE__INT64:
+				fp->n[index].v.int64 = va_arg(args, int64_t);
+				break;
 			case GLV_R_VALUE_TYPE__INT32:
 				fp->n[index].v.int32 = va_arg(args, int);
+				break;
+			case GLV_R_VALUE_TYPE__UINT32:
+				fp->n[index].v.uint32 = va_arg(args, uint32_t);
+				break;
+			case GLV_R_VALUE_TYPE__COLOR:
+				fp->n[index].v.int32 = va_arg(args, uint32_t);
 				break;
 			case GLV_R_VALUE_TYPE__STRING:
 				if(fp->n[index].v.string != NULL){
@@ -2933,6 +3004,8 @@ int glv_r_get_value(struct _glv_r_value **link,void *instance,char *key,char *ty
 	struct _glv_r_value *fp;
 	size_t *size;
 	int *int32;
+	uint32_t *uint32,*color;
+	int64_t  *int64;
 	void **string;
 	void **pointer;
 	double *real;
@@ -2977,15 +3050,37 @@ int glv_r_get_value(struct _glv_r_value **link,void *instance,char *key,char *ty
 			printf("glv_r_get_value:type unmach. [%s] arg %d (%d != %d)\n",key,index+1,fp->n[index].type,type);
 			//return(GLV_ERROR);
 		}
+		/*
+		Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+		Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+		Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+		Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+		Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+		Ss string			: GLV_R_VALUE_TYPE__STRING
+		Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+		Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+		Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+		*/
 		switch(type){
 			case GLV_R_VALUE_TYPE__SIZE:
 				size = va_arg(args, size_t*);
 				*size = fp->n[index].v.size;
 				break;
-			case GLV_R_VALUE_TYPE__COLOR:
+			case GLV_R_VALUE_TYPE__INT64:
+				int64 = va_arg(args, int64_t*);
+				*int64 = fp->n[index].v.int64;
+				break;
 			case GLV_R_VALUE_TYPE__INT32:
 				int32 = va_arg(args, int*);
 				*int32 = fp->n[index].v.int32;
+				break;
+			case GLV_R_VALUE_TYPE__UINT32:
+				uint32 = va_arg(args, uint32_t*);
+				*uint32 = fp->n[index].v.uint32;
+				break;
+			case GLV_R_VALUE_TYPE__COLOR:
+				color = va_arg(args, uint32_t*);
+				*color = fp->n[index].v.color;
 				break;
 			case GLV_R_VALUE_TYPE__STRING:
 				string = va_arg(args, void**);
@@ -3225,6 +3320,8 @@ void glv_r_print_value(struct _glv_r_value **link,void *instance)
 	struct _glv_r_value *fp;
 	size_t size;
 	int int32;
+	uint32_t uint32,color;
+	int64_t int64;
 	void *string;
 	void *pointer;
 	double real;
@@ -3262,14 +3359,33 @@ void glv_r_print_value(struct _glv_r_value **link,void *instance)
 					printf("[%s]",fp->n[index].abstract);
 				}
 			}
+			/*
+			Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+			Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+			Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+			Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+			Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+			Ss string			: GLV_R_VALUE_TYPE__STRING
+			Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+			Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+			Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+			*/
 			switch(type){
 				case GLV_R_VALUE_TYPE__SIZE:
 					size = fp->n[index].v.size;
-					printf(" type = size_t , value = %ld , %#lx\n",size,size);
+					printf(" type = size_t , value = %lu , %#lx\n",size,size);
+					break;
+				case GLV_R_VALUE_TYPE__INT64:
+					int64 = fp->n[index].v.int64;
+					printf(" type = int64_t , value = %ld , %#lx\n",int64,int64);
 					break;
 				case GLV_R_VALUE_TYPE__INT32:
 					int32 = fp->n[index].v.int32;
 					printf(" type = int32_t , value = %d , %#x\n",int32,int32);
+					break;
+				case GLV_R_VALUE_TYPE__UINT32:
+					uint32 = fp->n[index].v.uint32;
+					printf(" type = uint32_t , value = %u , %#x\n",uint32,uint32);
 					break;
 				case GLV_R_VALUE_TYPE__STRING:
 					string = fp->n[index].v.string;
@@ -3284,8 +3400,8 @@ void glv_r_print_value(struct _glv_r_value **link,void *instance)
 					printf(" type = double  , value = %lf\n",real);
 					break;
 				case GLV_R_VALUE_TYPE__COLOR:
-					int32 = fp->n[index].v.int32;
-					printf(" type = GLV_RGBACOLOR , value = GLV_SET_RGBA(%3d,%3d,%3d,%3d)\n",GLV_GET_R(int32),GLV_GET_G(int32),GLV_GET_B(int32),GLV_GET_A(int32));
+					color = fp->n[index].v.color;
+					printf(" type = GLV_RGBACOLOR , value = GLV_SET_RGBA(%3d,%3d,%3d,%3d)\n",GLV_GET_R(color),GLV_GET_G(color),GLV_GET_B(color),GLV_GET_A(color));
 					break;
 				case GLV_R_VALUE_TYPE__FUNCTION:
 					// functionは、読み出せない
@@ -3301,6 +3417,8 @@ void glv_r_print_template(struct _glv_r_value **link,void *instance,char *instan
 	struct _glv_r_value *fp;
 	size_t size;
 	int int32;
+	uint32_t uint32,color;
+	int64_t int64;
 	void *string;
 	void *pointer;
 	double real;
@@ -3322,12 +3440,32 @@ void glv_r_print_template(struct _glv_r_value **link,void *instance,char *instan
 		// -----------------------------------------------------------------------------------------
 		for(index=0;index<length;index++){
 			type = fp->n[index].type;
+			/*
+			Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+			Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+			Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+			Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+			Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+			Ss string			: GLV_R_VALUE_TYPE__STRING
+			Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+			Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+			Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+			*/
 			switch(type){
 				case GLV_R_VALUE_TYPE__SIZE:
+					printf("Z");
+					break;
+				case GLV_R_VALUE_TYPE__INT64:
 					printf("L");
 					break;
 				case GLV_R_VALUE_TYPE__INT32:
 					printf("i");
+					break;
+				case GLV_R_VALUE_TYPE__UINT32:
+					printf("U");
+					break;
+				case GLV_R_VALUE_TYPE__COLOR:
+					printf("C");
 					break;
 				case GLV_R_VALUE_TYPE__STRING:
 					printf("S");
@@ -3338,9 +3476,6 @@ void glv_r_print_template(struct _glv_r_value **link,void *instance,char *instan
 				case GLV_R_VALUE_TYPE__DOUBLE:
 					printf("R");
 					break;
-				case GLV_R_VALUE_TYPE__COLOR:
-					printf("C");
-					break;
 				case GLV_R_VALUE_TYPE__FUNCTION:
 					// functionは、読み出せない
 					break;
@@ -3350,14 +3485,33 @@ void glv_r_print_template(struct _glv_r_value **link,void *instance,char *instan
 		// -----------------------------------------------------------------------------------------
 		for(index=0;index<length;index++){
 			type = fp->n[index].type;
+			/*
+			Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+			Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+			Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+			Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+			Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+			Ss string			: GLV_R_VALUE_TYPE__STRING
+			Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+			Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+			Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+			*/
 			switch(type){
 				case GLV_R_VALUE_TYPE__SIZE:
 					size = fp->n[index].v.size;
-					printf(", (size_t) %ld",size);
+					printf(", (size_t) %lu",size);
+					break;
+				case GLV_R_VALUE_TYPE__INT64:
+					int64 = fp->n[index].v.int64;
+					printf(", (int64_t) %ld",int64);
 					break;
 				case GLV_R_VALUE_TYPE__INT32:
 					int32 = fp->n[index].v.int32;
 					printf(", (int32_t) %d",int32);
+					break;
+				case GLV_R_VALUE_TYPE__UINT32:
+					uint32 = fp->n[index].v.uint32;
+					printf(", (uint32_t) %u",uint32);
 					break;
 				case GLV_R_VALUE_TYPE__STRING:
 					string = fp->n[index].v.string;
@@ -3372,8 +3526,8 @@ void glv_r_print_template(struct _glv_r_value **link,void *instance,char *instan
 					printf(", (double)%lf",real);
 					break;
 				case GLV_R_VALUE_TYPE__COLOR:
-					int32 = fp->n[index].v.int32;
-					printf(", GLV_SET_RGBA(%3d,%3d,%3d,%3d)",GLV_GET_R(int32),GLV_GET_G(int32),GLV_GET_B(int32),GLV_GET_A(int32));
+					color = fp->n[index].v.color;
+					printf(", GLV_SET_RGBA(%3d,%3d,%3d,%3d)",GLV_GET_R(color),GLV_GET_G(color),GLV_GET_B(color),GLV_GET_A(color));
 					break;
 				case GLV_R_VALUE_TYPE__FUNCTION:
 					// functionは、読み出せない
@@ -3497,4 +3651,46 @@ glvInstanceId glv_getInstanceId(void *glv_instance)
 	}
 
 	return(instance->Id);
+}
+
+char *glv_strdup(char *str)
+{
+	return strdup(str);
+}
+
+void *glv_malloc(size_t size)
+{
+#if 0
+	char *ptr = malloc(size);
+	printf("glv_malloc %p %d\n",ptr,*ptr);
+	return(ptr);
+#else
+	return malloc(size);
+#endif
+}
+
+void *glv_cmalloc(size_t nmemb, size_t size)
+{
+	return calloc(nmemb,size);
+}
+
+void *glv_realloc(void *ptr, size_t size)
+{
+	return realloc(ptr,size);
+}
+
+void glv_free(void *ptr)
+{
+	printf("glv_free %p\n",ptr);
+	free(ptr);
+}
+
+void *glv_memset(void *dest, int c, size_t size)
+{
+	return memset(dest,c,size);
+}
+
+void *glv_memcpy(void *dest,void *src,size_t size)
+{
+	return memcpy(dest,src,size);
 }

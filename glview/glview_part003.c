@@ -428,8 +428,8 @@ static int wiget_list_box_mousePointer(glvWindow glv_win,glvSheet sheet,glvWiget
 		int offset_y = y - user_data->select * user_data->item_height;
 
 		if(glvWindow_isAliveWindow(glv_win,user_data->window_select_list_id) == GLV_INSTANCE_DEAD){
-			user_data->window_select_list_id = glvCreateChildWindow(glv_win,list_box_window_listener,&user_data->window_select_list,"list box window",
-							offset_x, offset_y, frame2_width, frame2_height,GLV_WINDOW_ATTR_DEFAULT);
+			user_data->window_select_list = glvCreateChildWindow(glv_win,list_box_window_listener,"list box window",
+							offset_x, offset_y, frame2_width, frame2_height,GLV_WINDOW_ATTR_DEFAULT,&user_data->window_select_list_id);
 			//user_data->window_select_list_id = glv_getInstanceId(user_data->window_select_list);
 			glv_allocUserData(user_data->window_select_list,sizeof(WINDOW_LIST_BOX_USER_DATA_t));
 			WINDOW_LIST_BOX_USER_DATA_t *list_box_window_user_data = glv_getUserData(user_data->window_select_list);

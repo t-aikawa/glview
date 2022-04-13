@@ -940,10 +940,17 @@ void glvGl_Viewport(int32_t x, int32_t y, int32_t width, int32_t height)
 /**
  * @brief		ClearColor
  */
-void glvGl_ClearColor(GLV_RGBACOLOR rgba)
+void glvGl_ClearColor(float r, float g, float b, float a)
 {
-	glClearColor(GLV_GET_FR(rgba), GLV_GET_FG(rgba), GLV_GET_FB(rgba), GLV_GET_FA(rgba));
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(r,g,b,a);
+}
+
+/**
+ * @brief		glClear
+ */
+void glvGl_Clear(uint32_t mask)
+{
+	glClear(mask);
 }
 
 /**

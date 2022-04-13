@@ -59,7 +59,7 @@ glvWindow	main_window = NULL;
 int main_frame_start(glvWindow frame_window,int width, int height)
 {
 	// 描画用のウインドウを作成する
-	glvCreateWindow(frame_window,window_listener,&main_window,"window",0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	main_window = glvCreateWindow(frame_window,window_listener,"window",0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT,NULL);
 	glvOnReDraw(main_window);	// 	描画要求
 	return(GLV_OK);
 }
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	}
 
 	// フレームを作成する
-	glvCreateFrameWindow(glv_dpy,frame_window_listener,&frame_window,"frame","sample 001",400, 550);
+	frame_window = glvCreateFrameWindow(glv_dpy,frame_window_listener,"frame","sample 001",400, 550,NULL);
 
 	/* ----------------------------------------------------------------------------------------------- */
 	glvEnterEventLoop(glv_dpy);		// event loop

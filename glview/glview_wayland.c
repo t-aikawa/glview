@@ -1977,7 +1977,12 @@ GLV_WINDOW_t *_glvAllocWindowResource(GLV_DISPLAY_t *glv_dpy,char *name)
 
 	wl_list_init(&glv_window->sheet_list);
 	glv_window->glv_dpy		= glv_dpy;
-	glv_window->name		= name;
+
+	if(name != NULL){
+		glv_window->name = strdup(name);
+	}else{
+		glv_window->name = NULL;
+	}
 
 #ifdef GLV_PTHREAD_MUTEX_RECURSIVE
 	pthread_mutexattr_init(&attr);
@@ -2118,7 +2123,7 @@ int _glvCreateWindow(GLV_WINDOW_t *glv_window,char *name,
 
 	glv_window->egl_window	= native;
 	glv_window->windowType	= windowType;
-	glv_window->name		= name;
+	
 	if(title != NULL){
 		glv_window->title	= strdup(title);
 	}else{
@@ -2282,6 +2287,11 @@ void _glvGcDestroyWindow(GLV_WINDOW_t *glv_window)
 	if(glv_window->title){
 		free(glv_window->title);
 		glv_window->title = NULL;
+	}
+
+	if(glv_window->name){
+		free(glv_window->name);
+		glv_window->name = NULL;
 	}
 
 	//free(glv_window);
@@ -2598,3 +2608,24 @@ int _glv_destroyAllWindow(GLV_DISPLAY_t *glv_dpy)
 	
 	return(GLV_OK);
 }
+
+void glv_print_window_address(GLV_DISPLAY_t *glv_dpy,void *address)
+{
+	GLV_WINDOW_t *glv_window;
+	if(address == NULL){
+		printf("python_print_address: address = NULL\n");
+		return;
+	}
+	pthread_mutex_lock(&glv_dpy->display_mutex);			// display
+
+	wl_list_for_each(glv_window, &((GLV_DISPLAY_t*)glv_dpy)->window_list, link){
+		if((glv_window->instance.alive == GLV_INSTANCE_ALIVE) && (glv_window == address)){
+			pthread_mutex_unlock(&glv_dpy->display_mutex);	// display
+			printf("python_print_address: address(%p) = window[%s]\n",address,glv_window->name);
+			return;
+		}
+	}
+	pthread_mutex_unlock(&glv_dpy->display_mutex);			// display
+	printf("python_print_address: address(%p) = unnokwn\n",address);
+}
+

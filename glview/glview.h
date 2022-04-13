@@ -28,14 +28,14 @@
 
 #ifdef  GLV_OPENGL_ES2
 #include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+//#include <GLES2/gl2ext.h>
 #include "es1emu_emulation.h"
 #else
 #include <GLES/gl.h>
 #include <GLES/glext.h>
 #endif /* GLV_OPENGL_ES2 */
 #include <EGL/egl.h>
-#include <EGL/eglext.h>
+//#include <EGL/eglext.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "pthread_msq.h"
@@ -201,26 +201,24 @@ typedef	void	*glvResource;		//
 typedef uint32_t	glvTime;
 typedef size_t		glvInstanceId;
 
-typedef struct glv_wiget_init_params {
-	int			x,y;
-	int			width,height;
+typedef struct glv_wiget_geometry_t {
+	int			x;
+	int			y;
+	int			width;
+	int			height;
 	float		scale;
 	glvInstanceId		wigetId;	// get only
 	glvInstanceId		sheetId;	// get only
 	glvInstanceId		windowId;	// get only
 } GLV_WIGET_GEOMETRY_t;
 
-typedef struct glv_wiget_status {
+typedef struct glv_wiget_status_t {
 	glvInstanceId		focusId;
-	int					focus_x;
-	int					focus_y;
 	glvInstanceId		selectId;
-	int					select_x;
-	int					select_y;
 	int					selectStatus;
 } GLV_WIGET_STATUS_t;
 
-typedef struct glv_frame_info {
+typedef struct glv_frame_info_t {
 	short top_shadow_size;
 	short bottom_shadow_size;
 	short left_shadow_size;
@@ -229,42 +227,42 @@ typedef struct glv_frame_info {
     short top_name_size;
     short top_cmd_menu_size;
     short top_pulldown_menu_size;
-    short top_user_area_size;		// top_name_size + top_cmd_menu_size + top_pulldown_menu_size
+    short top_user_area_size;		// = top_name_size + top_cmd_menu_size + top_pulldown_menu_size
 	short bottom_status_bar_size;
-    short bottom_user_area_size;	// bottom_status_bar_size
+    short bottom_user_area_size;	// = bottom_status_bar_size
 
 	short top_edge_size;
 	short bottom_edge_size;
 	short left_edge_size;
 	short right_edge_size;
 
-	short top_size;					// top_shadow_size    + top_edge_size    + top_user_area_size
-	short bottom_size;				// bottom_shadow_size + bottom_edge_size + bottom_user_area_size
-	short left_size;				// left_shadow_size   + left_edge_size
-	short right_size;				// right_shadow_size  + right_edge_size
+	short top_size;					// = top_shadow_size    + top_edge_size    + top_user_area_size
+	short bottom_size;				// = bottom_shadow_size + bottom_edge_size + bottom_user_area_size
+	short left_size;				// = left_shadow_size   + left_edge_size
+	short right_size;				// = right_shadow_size  + right_edge_size
 
 	short inner_width;
 	short inner_height;
-	short frame_width;				// inner_width  + left_size + right_size
-	short frame_height;				// inner_height + top_size + bottom_size
+	short frame_width;				// = inner_width  + left_size + right_size
+	short frame_height;				// = inner_height + top_size + bottom_size
 }GLV_FRAME_INFO_t;
 
 #define GLV_W_MENU_LIST_MAX     (25)
 
-struct glv_w_menu_item {
+struct glv_w_menu_item_t {
 	char	*text;
 	short	length;
 	short	attrib;
 	short	next;
-	short	functionId;
+	int		functionId;
 };
 
-typedef struct glv_w_menu {
+typedef struct glv_w_menu_t {
 	short	id;
 	short	num;
 	short	width;
 	short	height;
-	struct glv_w_menu_item	item[GLV_W_MENU_LIST_MAX];
+	struct glv_w_menu_item_t	item[GLV_W_MENU_LIST_MAX];
 }GLV_W_MENU_t;
 
 enum cursor_type {
@@ -320,7 +318,7 @@ typedef int (*GLV_SHEET_EVENT_FUNC_mousePointer_t)(glvWindow glv_win,glvSheet sh
 typedef int (*GLV_SHEET_EVENT_FUNC_mouseButton_t)(glvWindow glv_win,glvSheet sheet,int type,glvTime time,int x,int y,int pointer_stat);
 typedef int (*GLV_SHEET_EVENT_FUNC_mouseAxis_t)(glvWindow glv_win,glvSheet sheet,int type,glvTime time,int value);
 typedef int (*GLV_SHEET_EVENT_FUNC_action_t)(glvWindow glv_win,glvSheet sheet,int action,glvInstanceId selectId);
-typedef int (*GLV_SHEET_EVENT_FUNC_userMsg_t)(glvWindow glv_win,glvWindow sheet,int kind,void *data);
+typedef int (*GLV_SHEET_EVENT_FUNC_userMsg_t)(glvWindow glv_win,glvSheet sheet,int kind,void *data);
 typedef int (*GLV_SHEET_EVENT_FUNC_terminate_t)(glvSheet sheet);
 
 typedef int (*GLV_WIGET_EVENT_FUNC_init_t)(glvWindow glv_win,glvSheet sheet,glvWiget wiget);
@@ -401,14 +399,27 @@ typedef struct _glvinputfunc {
 #define GLV_R_VALUE_IO_SET			(1)	
 #define GLV_R_VALUE_IO_GET			(2)
 
+/*
+Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+Ss string			: GLV_R_VALUE_TYPE__STRING
+Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+Tt function			: GLV_R_VALUE_TYPE__FUNCTION
+*/
 #define GLV_R_VALUE_TYPE__NOTHING		(0)		// 未確定
-#define GLV_R_VALUE_TYPE__SIZE			(1)		// 8byte: long , size_t
-#define GLV_R_VALUE_TYPE__INT32			(2)		// 4baye: int
-#define GLV_R_VALUE_TYPE__STRING		(3)		// 8byte: string(UTF8) pointer
-#define GLV_R_VALUE_TYPE__POINTER		(4)		// 8byte: data pointer
-#define GLV_R_VALUE_TYPE__DOUBLE		(5)		// 8byte: double
-#define GLV_R_VALUE_TYPE__FUNCTION		(6)		// 8byte: function pointer
-#define GLV_R_VALUE_TYPE__COLOR			(7)		// 4byte: GLV_SET_RGBA(r,g,b,a)
+#define GLV_R_VALUE_TYPE__SIZE			(1)		// 8byte: unsigned long , size_t
+#define GLV_R_VALUE_TYPE__INT64			(2)		// 8byte: signed long
+#define GLV_R_VALUE_TYPE__INT32			(3)		// 4baye: signed int
+#define GLV_R_VALUE_TYPE__UINT32		(4)		// 4baye: unsigned int
+#define GLV_R_VALUE_TYPE__COLOR			(5)		// 4byte: GLV_SET_RGBA(r,g,b,a)
+#define GLV_R_VALUE_TYPE__STRING		(6)		// 8byte: string(UTF8) pointer
+#define GLV_R_VALUE_TYPE__POINTER		(7)		// 8byte: data pointer
+#define GLV_R_VALUE_TYPE__DOUBLE		(8)		// 8byte: double
+#define GLV_R_VALUE_TYPE__FUNCTION		(9)		// 8byte: function pointer
 
 #define _GLV_R_VALUE_MAX		(7)
 
@@ -427,9 +438,22 @@ typedef struct _glv_r_value {
 	struct {
 		int		type;
 		char	*abstract;
+		/*
+		Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
+		Ll int64_t			: GLV_R_VALUE_TYPE__INT64
+		Ii int32_t			: GLV_R_VALUE_TYPE__INT32
+		Uu uint32_t			: GLV_R_VALUE_TYPE__UINT32
+		Cc uint32_t(color)	: GLV_R_VALUE_TYPE__COLOR
+		Ss string			: GLV_R_VALUE_TYPE__STRING
+		Pp pointer			: GLV_R_VALUE_TYPE__POINTER
+		Rr double			: GLV_R_VALUE_TYPE__DOUBLE
+		*/
 		union value {
 			size_t	size;
+			int64_t	int64;
 			int		int32;
+			uint32_t uint32;
+			uint32_t color;
 			void	*string;
 			void	*pointer;
 			double	real;
@@ -440,6 +464,7 @@ typedef struct _glv_r_value {
 extern GLVINPUTFUNC_t	glv_input_func;
 
 //-----------------------------------
+void	glvGetVersion(int *major,int *minor,int *patch);
 void	glvSetDebugFlag(int flag);
 int		glvCheckDebugFlag(int flag);
 
@@ -449,13 +474,17 @@ void glvDestroyResource(glvResource res);
 glvDisplay	glvOpenDisplay(char *dpyName);
 int			glvCloseDisplay(glvDisplay glv_dpy);
 
-glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_listener *listener,glvWindow *glv_win,char *name,char *title,int width, int height);
-glvInstanceId glvCreateWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr);
-glvInstanceId glvCreateThreadWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr);
-glvInstanceId glvCreateChildWindow(glvWindow parent,const struct glv_window_listener *listener,glvWindow *glv_win,char *name,int x, int y, int width, int height,int attr);
+void glvEnterEventLoop(glvDisplay glv_dpy);
+void glvEscapeEventLoop(glvDisplay glv_dpy);
+
+glvWindow glvCreateFrameWindow(void *glv_instance,const struct glv_frame_listener *listener,char *name,char *title,int width, int height,glvInstanceId *id);
+glvWindow glvCreateWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id);
+glvWindow glvCreateThreadWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id);
+glvWindow glvCreateChildWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id);
 
 void glvDestroyWindow(glvWindow *glv_win);
 
+glvWindow glvGetWindowFromId(glvDisplay glv_dpy,glvInstanceId windowId);
 int glvWindow_isAliveWindow(void *glv_instance,glvInstanceId windowId);
 glvTime glvWindow_getLastTime(glvWindow glv_win);
 char *glvWindow_getWindowName(glvWindow glv_win);
@@ -471,33 +500,10 @@ int glvOnAction(void *glv_instance,int action,glvInstanceId selectId);
 int glvOnUserMsg(glvWindow glv_win,int kind,void *data,size_t size);
 
 int glvCreate_mTimer(glvWindow glv_win,int group,int id,int type,int mTime);
-int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,struct timespec *reqWaitTime);
+int glvCreate_uTimer(glvWindow glv_win,int group,int id,int type,int64_t tv_sec,int64_t tv_nsec);
 int glvStartTimer(glvWindow glv_win,int id);
 int glvStopTimer(glvWindow glv_win,int id);
 
-void glvEnterEventLoop(glvDisplay glv_dpy);
-void glvEscapeEventLoop(glvDisplay glv_dpy);
-
-void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *class);
-void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t init);
-void glvWindow_setHandler_start(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_start_t start);
-void glvWindow_setHandler_configure(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_configure_t configure);
-void glvWindow_setHandler_reshape(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_reshape_t reshape);
-void glvWindow_setHandler_redraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_redraw_t redraw);
-void glvWindow_setHandler_update(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_update_t update);
-void glvWindow_setHandler_timer(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_timer_t timer);
-void glvWindow_setHandler_mousePointer(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mousePointer_t mousePointer);
-void glvWindow_setHandler_mouseButton(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mouseButton_t mouseButton);
-void glvWindow_setHandler_mouseAxis(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_mouseAxis_t mouseAxis);
-void glvWindow_setHandler_gesture(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_gesture_t gesture);
-void glvWindow_setHandler_cursor(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_cursor_t cursor);
-void glvWindow_setHandler_userMsg(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_userMsg_t userMsg);
-void glvWindow_setHandler_terminate(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_terminate_t terminate);
-void glvWindow_setHandler_action(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_action_t action);
-void glvWindow_setHandler_key(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_key_t key);
-void glvWindow_setHandler_endDraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_endDraw_t endDraw);
-
-void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*class);
 void glvSheet_setHandler_init(glvSheet sheet,GLV_SHEET_EVENT_FUNC_init_t init);
 void glvSheet_setHandler_reshape(glvSheet sheet,GLV_SHEET_EVENT_FUNC_reshape_t reshape);
 void glvSheet_setHandler_redraw(glvSheet sheet,GLV_SHEET_EVENT_FUNC_redraw_t redraw);
@@ -510,7 +516,6 @@ void glvSheet_setHandler_action(glvSheet sheet,GLV_SHEET_EVENT_FUNC_action_t act
 void glvSheet_setHandler_userMsg(glvSheet sheet,GLV_SHEET_EVENT_FUNC_userMsg_t userMsg);
 void glvSheet_setHandler_terminate(glvSheet sheet,GLV_SHEET_EVENT_FUNC_terminate_t terminate);
 
-void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *class);
 void glvWiget_setHandler_init(glvWiget wiget,GLV_WIGET_EVENT_FUNC_init_t init);
 void glvWiget_setHandler_redraw(glvWiget wiget,GLV_WIGET_EVENT_FUNC_redraw_t redraw);
 void glvWiget_setHandler_mousePointer(glvWiget wiget,GLV_WIGET_EVENT_FUNC_mousePointer_t mousePointer);

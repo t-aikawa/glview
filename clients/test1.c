@@ -440,8 +440,8 @@ static const struct glv_window_listener *sub_window_menu_listener = &_sub_window
 int sub_frame_start(glvWindow glv_frame_window,int width, int height)
 {
 	printf("sub_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
-	glvCreateWindow(glv_frame_window,sub_window_listener,&glv_hmi_window4,"glv_hmi_window4",
-			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glv_hmi_window4 = glvCreateWindow(glv_frame_window,sub_window_listener,"glv_hmi_window4",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT,NULL);
 	glvOnReDraw(glv_hmi_window4);
 	return(GLV_OK);
 }
@@ -472,7 +472,7 @@ void part_window_test(glvWindow glv_frame_window)
 	int winodw_height = 400;
 
 	if(glvWindow_isAliveWindow(glv_frame_window,glv_frame_window2_id) == GLV_INSTANCE_DEAD){
-		glv_frame_window2_id = glvCreateFrameWindow(glv_frame_window,sub_frame_window_listener,&glv_frame_window2,"glv_frame_window2","sub window",window_width, winodw_height);
+		glv_frame_window2 = glvCreateFrameWindow(glv_frame_window,sub_frame_window_listener,"glv_frame_window2","sub window",window_width, winodw_height,&glv_frame_window2_id);
 		printf("glv_frame_window2 create\n");
 	}else{
 		glvDestroyWindow(&glv_hmi_window4);
@@ -499,8 +499,8 @@ int test_keyboard_handle_key(unsigned int key,unsigned int modifiers,unsigned in
 				int offset_x = 25;
 				int offset_y = 25;
 				if(glvWindow_isAliveWindow(glv_frame_window,glv_hmi_window2_id) == GLV_INSTANCE_DEAD){
-					glv_hmi_window2_id = glvCreateChildWindow(glv_frame_window,sub_window_menu_listener,&glv_hmi_window2,"glv_hmi_window2",
-									offset_x, offset_y, window_width, window_height,GLV_WINDOW_ATTR_DEFAULT);
+					glv_hmi_window2 = glvCreateChildWindow(glv_frame_window,sub_window_menu_listener,"glv_hmi_window2",
+									offset_x, offset_y, window_width, window_height,GLV_WINDOW_ATTR_DEFAULT,&glv_hmi_window2_id);
 					glvOnReDraw(glv_hmi_window2);
 				}
 			}

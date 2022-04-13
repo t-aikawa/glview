@@ -651,8 +651,8 @@ glvInstanceId _glv_wiget_check_wiget_area(GLV_WINDOW_t *glv_window,int x,int y,i
 					}
 				}
 				glv_sheet->pointer_focus_wiget_Id = glv_wigetId;
-				glv_sheet->pointer_focus_wiget_x = x - glv_wiget->sheet_x;
-				glv_sheet->pointer_focus_wiget_y = y - glv_wiget->sheet_y;
+//				glv_sheet->pointer_focus_wiget_x = x - glv_wiget->sheet_x;
+//				glv_sheet->pointer_focus_wiget_y = y - glv_wiget->sheet_y;
 				break;
 			}
 		}
@@ -823,14 +823,9 @@ int glvSheet_getSelectWigetStatus(glvSheet sheet,GLV_WIGET_STATUS_t *wigetStatus
 	GLV_SHEET_t *glv_sheet = (GLV_SHEET_t*)sheet;
 
 	wigetStatus->focusId = glv_sheet->pointer_focus_wiget_Id;
-	wigetStatus->focus_x = glv_sheet->pointer_focus_wiget_x;
-	wigetStatus->focus_y = glv_sheet->pointer_focus_wiget_y;
 	wigetStatus->selectId = glv_sheet->select_wiget_Id;
 	wigetStatus->selectStatus = glv_sheet->select_wiget_button_status;
-	wigetStatus->select_x = glv_sheet->select_wiget_x;
-	wigetStatus->select_y = glv_sheet->select_wiget_y;
 
-	//printf("wigetStatus->focusId = %d\n",wigetStatus->focusId);
 	return(GLV_OK);
 }
 

@@ -324,3 +324,60 @@ void glv_createCsourcePngDataForFilePath(char* file_path,char* out_name)
 	fclose(wfp);
 	fclose(ifp);
 }
+
+void glv_createPythonSourcePngDataForFilePath(char* file_path,char* out_name)
+{
+	FILE *ifp;
+	FILE *wfp;
+	int n;
+	int	ch;
+	char path_name[PATH_NAME_SIZE];	// ファイルパス
+	char *path;
+	long fileSize;
+
+	ifp = fopen(file_path,"rb");
+	if(ifp == NULL){
+		fprintf(stderr,"glv_createPythonSourcePngDataForFilePath : not found [%s]\n",file_path);
+		return;
+	}
+
+	fseek(ifp,0,SEEK_END);
+	fileSize=ftell(ifp);
+	fseek(ifp,0,SEEK_SET);
+
+	wfp = fopen(out_name,"wb");
+	if(wfp == NULL) {
+		fclose(ifp);
+		fprintf(stderr,"glv_createPythonSourcePngDataForFilePath: can not create. [%s]\n",out_name);
+		return;
+	}
+
+	n = 0;
+	fprintf(wfp,"%s_size = %ld;\n",out_name,fileSize);
+	fprintf(wfp,"*%s_data =",out_name);
+	while((ch = fgetc(ifp)) != EOF){
+		if(n == 0){
+			fprintf(wfp,"\nb\"");
+		}
+		fprintf(wfp,"\\x%02x",ch);
+		n++;
+		if(n == 32){
+			fprintf(wfp,"\" +");
+			n = 0;
+		}
+	}
+	if(n != 0){
+		fprintf(wfp,"\"");
+	}
+	fprintf(wfp,"\n");
+
+	path_name[0] = '\0';
+    path = getcwd(path_name,PATH_NAME_SIZE);	// カレントディレクトリ取得
+
+	if(path != NULL){
+		printf("glv_createPythonSourcePngDataForFilePath: create python source file [%s/%s]\n",path_name,out_name);
+	}
+
+	fclose(wfp);
+	fclose(ifp);
+}

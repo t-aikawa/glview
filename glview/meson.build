@@ -59,6 +59,7 @@ glview_lib = library(
 	'glview_part005.c',
 	'glview_part006.c',
 	'glview_png.c',
+	'glview_python.c',
 #	'xdg-shell-protocol.c',
 #	'xdg-shell-unstable-v6-protocol.c',
 	'ivi-application-protocol.c',

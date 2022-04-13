@@ -854,9 +854,10 @@ int frame_reshape(glvWindow glv_win,int width, int height)
 	return(GLV_OK);
 }
 
-glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_listener *listener,glvWindow *glv_win,char *name,char *title,int width, int height)
+glvWindow glvCreateFrameWindow(void *glv_instance,const struct glv_frame_listener *listener,char *name,char *title,int width, int height,glvInstanceId *id)
 {
-	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvWindow glv_win;
+	GLV_WINDOW_t *glv_window;
 	GLV_FRAME_INFO_t	frameInfo;
 	glvDisplay glv_dpy;
 	glvWindow glv_win_parent;
@@ -875,8 +876,8 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 		return(0);
 	}
 
-	glvAllocWindowResource(glv_dpy,glv_win,name,NULL);
-	glv_window = (GLV_WINDOW_t*)*glv_win;
+	glvAllocWindowResource(glv_dpy,&glv_win,name,NULL);
+	glv_window = (GLV_WINDOW_t*)glv_win;
 
 	memset(&frameInfo,0,sizeof(GLV_FRAME_INFO_t));
 
@@ -926,7 +927,7 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
     frameInfo.bottom_user_area_size = frameInfo.bottom_status_bar_size;
 
 	frameInfo.top_size				= frameInfo.top_user_area_size + frameInfo.top_shadow_size + frameInfo.top_edge_size;
-	frameInfo.bottom_size			= frameInfo.bottom_status_bar_size + frameInfo.bottom_shadow_size + frameInfo.bottom_edge_size;
+	frameInfo.bottom_size			= frameInfo.bottom_user_area_size + frameInfo.bottom_shadow_size + frameInfo.bottom_edge_size;
 	frameInfo.left_size				= frameInfo.left_shadow_size   + frameInfo.left_edge_size;
 	frameInfo.right_size			= frameInfo.right_shadow_size  + frameInfo.right_edge_size;
 
@@ -969,5 +970,8 @@ glvInstanceId glvCreateFrameWindow(void *glv_instance,const struct glv_frame_lis
 
 	pthread_mutex_unlock(&glv_window->serialize_mutex);				// window serialize_mutex
 
-	return(glv_window->instance.Id);
+	if(id != NULL){
+		*id = glv_window->instance.Id;
+	}
+	return(glv_window);
 }

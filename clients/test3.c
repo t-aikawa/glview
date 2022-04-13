@@ -369,8 +369,8 @@ const struct glv_window_listener *smoke_window_listener = &_smoke_window_listene
 int smoke_frame_start(glvWindow glv_frame_window,int width, int height)
 {
 	printf("main_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
-	glvCreateWindow(glv_frame_window,smoke_window_listener,&smoke_window,"smoke window",
-			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT | GLV_WINDOW_ATTR_POINTER_MOTION);
+	smoke_window = glvCreateWindow(glv_frame_window,smoke_window_listener,"smoke window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT | GLV_WINDOW_ATTR_POINTER_MOTION,NULL);
 	glvOnReDraw(smoke_window);
 	return(GLV_OK);
 }
@@ -403,7 +403,7 @@ void smoke_window_test(glvWindow glv_frame_window)
 	int window_height = 400;
 
 	if(glvWindow_isAliveWindow(glv_frame_window,smoke_frame_id) == GLV_INSTANCE_DEAD){
-		smoke_frame_id = glvCreateFrameWindow(glv_frame_window,smoke_frame_window_listener,&smoke_frame,"smoke frame","smoke",window_width, window_height);
+		smoke_frame = glvCreateFrameWindow(glv_frame_window,smoke_frame_window_listener,"smoke frame","smoke",window_width, window_height,&smoke_frame_id);
 		printf("smoke_frame create\n");
 	}else{
 		glvDestroyWindow(&smoke_window);

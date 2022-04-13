@@ -42,7 +42,7 @@ struct geometry {
 	int width, height;
 };
 
-typedef struct window {
+typedef struct window_user_data {
 	struct geometry geometry;
 	struct {
 		GLuint rotation_uniform;
@@ -71,7 +71,7 @@ static const char *frag_shader_text =
 	"  gl_FragColor = v_color;\n"
 	"}\n";
 
-static GLuint create_shader(struct window *window, const char *source, GLenum shader_type)
+static GLuint create_shader(struct window_user_data *user_data, const char *source, GLenum shader_type)
 {
 	GLuint shader;
 	GLint status;
@@ -96,17 +96,17 @@ static GLuint create_shader(struct window *window, const char *source, GLenum sh
 	return shader;
 }
 
-static void init_gl(struct window *window)
+static void init_gl(struct window_user_data *user_data)
 {
 	GLuint frag, vert;
 	GLuint program;
 	GLint status;
 
-	frag = create_shader(window, frag_shader_text, GL_FRAGMENT_SHADER);
-	vert = create_shader(window, vert_shader_text, GL_VERTEX_SHADER);
+	frag = create_shader(user_data, frag_shader_text, GL_FRAGMENT_SHADER);
+	vert = create_shader(user_data, vert_shader_text, GL_VERTEX_SHADER);
 
 	program = glCreateProgram();
-	window->gl.program = program;
+	user_data->gl.program = program;
 
 	glAttachShader(program, frag);
 	glAttachShader(program, vert);
@@ -123,19 +123,19 @@ static void init_gl(struct window *window)
 
 	glUseProgram(program);
 
-	window->gl.pos = 0;
-	window->gl.col = 1;
+	user_data->gl.pos = 0;
+	user_data->gl.col = 1;
 
-	glBindAttribLocation(program, window->gl.pos, "pos");
-	glBindAttribLocation(program, window->gl.col, "color");
+	glBindAttribLocation(program, user_data->gl.pos, "pos");
+	glBindAttribLocation(program, user_data->gl.col, "color");
 	glLinkProgram(program);
 
-	window->gl.rotation_uniform = glGetUniformLocation(program, "rotation");
+	user_data->gl.rotation_uniform = glGetUniformLocation(program, "rotation");
 }
 
 static void redraw(glvWindow glv_win)
 {
-	struct window *window = glv_getUserData(glv_win);
+	struct window_user_data *user_data = glv_getUserData(glv_win);
 	uint32_t time;
 	static const GLfloat verts[3][2] = {
 		{ -0.5, -0.5 },
@@ -159,15 +159,15 @@ static void redraw(glvWindow glv_win)
 
 	gettimeofday(&tv, NULL);
 	time = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-	if (window->frames == 0)
-		window->benchmark_time = time;
-	if (time - window->benchmark_time > (benchmark_interval * 1000)) {
+	if (user_data->frames == 0)
+		user_data->benchmark_time = time;
+	if (time - user_data->benchmark_time > (benchmark_interval * 1000)) {
 		printf("simple-egl[%s]: %d frames in %d seconds: %f fps\n",glvWindow_getWindowName(glv_win),
-		       window->frames,
+		       user_data->frames,
 		       benchmark_interval,
-		       (float) window->frames / benchmark_interval);
-		window->benchmark_time = time;
-		window->frames = 0;
+		       (float) user_data->frames / benchmark_interval);
+		user_data->benchmark_time = time;
+		user_data->frames = 0;
 	}
 
 	angle = (time / speed_div) % 360 * M_PI / 180.0;
@@ -176,49 +176,49 @@ static void redraw(glvWindow glv_win)
 	rotation[2][0] = -sin(angle);
 	rotation[2][2] =  cos(angle);
 
-	glViewport(0, 0, window->geometry.width, window->geometry.height);
+	glViewport(0, 0, user_data->geometry.width, user_data->geometry.height);
 
-	glUniformMatrix4fv(window->gl.rotation_uniform, 1, GL_FALSE,(GLfloat *) rotation);
+	glUniformMatrix4fv(user_data->gl.rotation_uniform, 1, GL_FALSE,(GLfloat *) rotation);
 
 	glClearColor(0.0, 0.0, 0.0, 0.5);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glVertexAttribPointer(window->gl.pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-	glVertexAttribPointer(window->gl.col, 3, GL_FLOAT, GL_FALSE, 0, colors);
-	glEnableVertexAttribArray(window->gl.pos);
-	glEnableVertexAttribArray(window->gl.col);
+	glVertexAttribPointer(user_data->gl.pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
+	glVertexAttribPointer(user_data->gl.col, 3, GL_FLOAT, GL_FALSE, 0, colors);
+	glEnableVertexAttribArray(user_data->gl.pos);
+	glEnableVertexAttribArray(user_data->gl.col);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	glDisableVertexAttribArray(window->gl.pos);
-	glDisableVertexAttribArray(window->gl.col);
+	glDisableVertexAttribArray(user_data->gl.pos);
+	glDisableVertexAttribArray(user_data->gl.col);
 
-	usleep(window->delay);
+	usleep(user_data->delay);
 
-	window->frames++;
+	user_data->frames++;
 }
 
 static int simple_egl_window_init(glvWindow glv_win,int width, int height)
 {
-	glv_allocUserData(glv_win,sizeof(struct window));
-	struct window *window = glv_getUserData(glv_win);
+	glv_allocUserData(glv_win,sizeof(struct window_user_data));
+	struct window_user_data *user_data = glv_getUserData(glv_win);
 
-	window->geometry.width 	= width;
-	window->geometry.height	= height;
+	user_data->geometry.width 	= width;
+	user_data->geometry.height	= height;
 
-	init_gl(window);
+	init_gl(user_data);
 
 	return(GLV_OK);
 }
 
 static int simple_egl_window_reshape(glvWindow glv_win,int width, int height)
 {
-	struct window *window = glv_getUserData(glv_win);
+	struct window_user_data *user_data = glv_getUserData(glv_win);
 
 	glViewport(0, 0, width, height);
 
-	window->geometry.width 	= width;
-	window->geometry.height	= height;
+	user_data->geometry.width 	= width;
+	user_data->geometry.height	= height;
 
 	return(GLV_OK);
 }
@@ -245,13 +245,13 @@ static int simple_egl_window_endDraw(glvWindow glv_win,glvTime time)
 static int simple_egl_main_window_terminate(glvWindow glv_win)
 {
 	extern glvWindow	glv_main_window;
-	struct window *window = glv_getUserData(glv_win);
+	struct window_user_data *user_data = glv_getUserData(glv_win);
 	printf("simple_egl_window_terminate\n");
 
 	glUseProgram(0);
 
-	if(window->gl.program != 0){
-		glDeleteProgram(window->gl.program);
+	if(user_data->gl.program != 0){
+		glDeleteProgram(user_data->gl.program);
 	}
 
 	return(GLV_OK);
@@ -272,8 +272,8 @@ glvWindow	glv_main_window = NULL;
 int main_frame_start(glvWindow glv_frame_window,int width, int height)
 {
 	printf("main_frame_start [%s] width = %d , height = %d\n",glvWindow_getWindowName(glv_frame_window),width,height);
-	glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,&glv_main_window,"simple-egl-window",
-			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT);
+	glv_main_window = glvCreateWindow(glv_frame_window,simple_egl_main_window_listener,"simple-egl-window",
+			0, 0, width, height,GLV_WINDOW_ATTR_DEFAULT,NULL);
 	glvOnReDraw(glv_main_window);
 	return(GLV_OK);
 }
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 		return(-1);
 	}
 
-	glvCreateFrameWindow(glv_dpy,main_frame_window_listener,&glv_frame_window,"frame window",APP_NAME_TEXT,WinWidth, WinHeight);
+	glv_frame_window = glvCreateFrameWindow(glv_dpy,main_frame_window_listener,"frame window",APP_NAME_TEXT,WinWidth, WinHeight,NULL);
 
 	/* ----------------------------------------------------------------------------------------------- */
 	glvEnterEventLoop(glv_dpy);		// event loop
