@@ -39,7 +39,7 @@
 // ----------------------------------------------------
 #define GLV_VERSION_MAJOR	(0)
 #define GLV_VERSION_MINOR	(1)
-#define GLV_VERSION_PATCH	(15)
+#define GLV_VERSION_PATCH	(16)
 // ----------------------------------------------------
 
 #define GLV_OPENGL_ES1_API	(1)
@@ -377,11 +377,18 @@ int glvCloseDisplay(glvDisplay display)
 }
 
 // -----------------------------------------------------------------------------------------
-void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *class)
+void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *_class)
 {
 	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
 	if(glv_window == NULL) return;
-	glv_window->eventFunc.class = class;
+	glv_window->eventFunc._class = _class;
+}
+
+void glvWindow_setHandler_new(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_new_t _new)
+{
+	GLV_WINDOW_t *glv_window=(GLV_WINDOW_t *)glv_win;
+	if(glv_window == NULL) return;
+	glv_window->eventFunc._new = _new;
 }
 
 void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t init)
@@ -504,11 +511,30 @@ void glvWindow_setHandler_terminate(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_term
 }
 
 // -----------------------------------------------------------------------------------------
-void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*class)
+void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*_class)
 {
 	GLV_SHEET_t *glv_sheet=(GLV_SHEET_t *)sheet;
 	if(glv_sheet == NULL) return;
-	glv_sheet->eventFunc.class = class;
+	glv_sheet->eventFunc._class = _class;
+}
+
+void glvSheet_setHandler_new(glvSheet sheet,GLV_SHEET_EVENT_FUNC_new_t _new)
+{
+	GLV_SHEET_t *glv_sheet=(GLV_SHEET_t *)sheet;
+	GLV_WINDOW_t *glv_window;
+
+	if(glv_sheet == NULL) return;
+	glv_sheet->eventFunc._new = _new;
+
+	glv_window = glv_sheet->glv_window;
+
+	if(glv_sheet->eventFunc._new){
+		int rc;
+		rc = (glv_sheet->eventFunc._new)((glvWindow)glv_window,(glvSheet)glv_sheet);
+		if(rc != GLV_OK){
+			fprintf(stderr,"glvSheet_setHandler_new:glv_sheet->eventFunc._new error\n");
+		}
+	}
 }
 
 void glvSheet_setHandler_init(glvSheet sheet,GLV_SHEET_EVENT_FUNC_init_t init)
@@ -602,11 +628,26 @@ void glvSheet_setHandler_terminate(glvSheet sheet,GLV_SHEET_EVENT_FUNC_terminate
 }
 
 // -----------------------------------------------------------------------------------------
-void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *class)
+void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *_class)
 {
 	GLV_WIGET_t *glv_wiget=(GLV_WIGET_t *)wiget;
 	if(glv_wiget == NULL) return;
-	glv_wiget->eventFunc.class = class;
+	glv_wiget->eventFunc._class = _class;
+}
+
+void glvWiget_setHandler_new(glvWiget wiget,GLV_WIGET_EVENT_FUNC_new_t _new)
+{
+	GLV_WIGET_t *glv_wiget=(GLV_WIGET_t *)wiget;
+	if(glv_wiget == NULL) return;
+	glv_wiget->eventFunc._new = _new;
+
+	if(glv_wiget->eventFunc._new){
+		int rc;
+		rc = (glv_wiget->eventFunc._new)((glvWindow)glv_wiget->glv_sheet->glv_window,(glvWiget)glv_wiget->glv_sheet,(glvSheet)glv_wiget);
+		if(rc != GLV_OK){
+			fprintf(stderr,"glvWiget_setHandler_new:glv_wiget->eventFunc._new error\n");
+		}
+	}
 }
 
 void glvWiget_setHandler_init(glvWiget wiget,GLV_WIGET_EVENT_FUNC_init_t init)
@@ -689,7 +730,8 @@ int glvAllocWindowResource(glvDisplay glv_dpy,glvWindow *glv_win,char *name,cons
 		if(listener->beauty != 0){
 			glv_window->beauty = 1;
 		}
-		glvWindow_setHandler_class(*glv_win,listener->class);
+		glvWindow_setHandler_class(*glv_win,listener->_class);
+		glvWindow_setHandler_new(*glv_win,listener->_new);
 		((GLV_WINDOW_t*)glv_window)->attr |= listener->attr;
 		glvWindow_setHandler_init(*glv_win,listener->init);
 		glvWindow_setHandler_reshape(*glv_win,listener->reshape);
@@ -855,9 +897,16 @@ void *glvExecMsg(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 	int event = rmsg->data[0];
 
 	switch(event){
-		case GLV_ON_INIT:
+		case GLV_ON_INIT: // for GLV_TYPE_CHILD_WINDOW
 			/* 初期化 */
 			GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"[%s] GLV_ON_INIT(%d,%d)\n"GLV_DEBUG_END_COLOR,glv_window->name,(int)rmsg->data[4],(int)rmsg->data[5]);
+			if(glv_window->eventFunc._new != NULL){
+				int rc;
+				rc = (glv_window->eventFunc._new)(glv_window);
+				if(rc != GLV_OK){
+					fprintf(stderr,"glv_window->eventFunc._new error\n");
+				}
+			}			
 			if(glv_window->eventFunc.init != NULL){
 				int rc;
 				rc = (glv_window->eventFunc.init)(glv_window,rmsg->data[4],rmsg->data[5]);
@@ -1282,6 +1331,13 @@ void *glvSurfaceViewProc(void *param)
 #endif
 
 	/* 初期化 */
+	if(glv_window->eventFunc._new != NULL){
+		int rc;
+		rc = (glv_window->eventFunc._new)(glv_window);
+		if(rc != GLV_OK){
+			fprintf(stderr,"glv_window->eventFunc._new error\n");
+		}
+	}
 	if(glv_window->eventFunc.init != NULL){
 		int rc;
 		rc = (glv_window->eventFunc.init)(glv_window,glv_window->width,glv_window->height);
@@ -2504,6 +2560,10 @@ int glv_isInsertMode(void *glv_instance)
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
 	int ins_mode=1;
+	if(glv_instance == NULL){
+		printf("glv_isInsertMode:instance is NULL\n");
+		return(ins_mode);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_DISPLAY:
 			glv_display = (GLV_DISPLAY_t*)instance;
@@ -2537,6 +2597,10 @@ int glv_isPullDownMenu(void *glv_instance)
 	GLV_WIGET_t	*wiget;
 	GLV_WINDOW_t *myFrame=NULL;
 	int menu=0;
+	if(glv_instance == NULL){
+		printf("glv_isPullDownMenu:instance is NULL\n");
+		return(menu);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2569,6 +2633,10 @@ int glv_isCmdMenu(void *glv_instance)
 	GLV_WIGET_t	*wiget;
 	GLV_WINDOW_t *myFrame=NULL;
 	int menu=0;
+	if(glv_instance == NULL){
+		printf("glv_isCmdMenu:instance is NULL\n");
+		return(menu);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2600,6 +2668,10 @@ glvDisplay glv_getDisplay(void *glv_instance)
 	GLV_WINDOW_t *glv_window;
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
+	if(glv_instance == NULL){
+		printf("glv_getDisplay:instance is NULL\n");
+		return(NULL);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_DISPLAY:
 			glv_display = (GLV_DISPLAY_t*)instance;
@@ -2630,6 +2702,10 @@ glvWindow glv_getWindow(void *glv_instance)
 	GLV_WINDOW_t *glv_window=NULL;
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
+	if(glv_instance == NULL){
+		printf("glv_getWindow:instance is NULL\n");
+		return(NULL);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2655,6 +2731,10 @@ glvWindow glv_getFrameWindow(void *glv_instance)
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
 	GLV_WINDOW_t *myFrame=NULL;
+	if(glv_instance == NULL){
+		printf("glv_getFrameWindow:instance is NULL\n");
+		return(NULL);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2683,6 +2763,10 @@ int glv_getWindowType(void *glv_instance)
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
 	int windowType=0;
+	if(glv_instance == NULL){
+		printf("glv_getWindowType:instance is NULL\n");
+		return(windowType);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2711,6 +2795,10 @@ int glv_getFrameInfo(void *glv_instance,GLV_FRAME_INFO_t *frameInfo)
 	GLV_WINDOW_t *glv_window;
 	GLV_SHEET_t	*sheet;
 	GLV_WIGET_t	*wiget;
+	if(glv_instance == NULL){
+		printf("glv_getFrameInfo:instance is NULL\n");
+		return(rc);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_WINDOW:
 			glv_window = (GLV_WINDOW_t*)instance;
@@ -2738,6 +2826,9 @@ int glv_getFrameInfo(void *glv_instance,GLV_FRAME_INFO_t *frameInfo)
 int glv_getInstanceType(void *glv_instance)
 {
 	_GLV_INSTANCE_t *instance = glv_instance;
+	if(glv_instance == NULL){
+		return(0);
+	}
 	switch(instance->instanceType){
 		case GLV_INSTANCE_TYPE_DISPLAY:
 		case GLV_INSTANCE_TYPE_WINDOW:

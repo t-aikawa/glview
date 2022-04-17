@@ -683,7 +683,7 @@ glvSheet glvCreateSheet(glvWindow glv_win,const struct glv_sheet_listener *liste
 	glv_sheet->glv_window = glv_window;
 	glv_sheet->glv_dpy = glv_window->glv_dpy;
 	glv_sheet->initialized = 0;
-    glv_sheet->name = name;
+    glv_sheet->name = strdup(name);
 
 #ifdef GLV_PTHREAD_MUTEX_RECURSIVE
 	pthread_mutexattr_t attr;
@@ -699,7 +699,8 @@ glvSheet glvCreateSheet(glvWindow glv_win,const struct glv_sheet_listener *liste
 	pthread_mutex_unlock(&glv_window->window_mutex);			// window
 
 	if(listener != NULL){
-		glvSheet_setHandler_class(glv_sheet,listener->class);
+		glvSheet_setHandler_class(glv_sheet,listener->_class);
+		glvSheet_setHandler_new(glv_sheet,listener->_new);
 		glvSheet_setHandler_init(glv_sheet,listener->init);
 		glvSheet_setHandler_reshape(glv_sheet,listener->reshape);
 		glvSheet_setHandler_redraw(glv_sheet,listener->redraw);
@@ -798,6 +799,7 @@ void _glvGcDestroySheet(GLV_SHEET_t *glv_sheet)
 	GLV_IF_DEBUG_INSTANCE printf(GLV_DEBUG_INSTANCE_COLOR"_glvGcDestroySheet id = %ld [%s]\n"GLV_DEBUG_END_COLOR,glv_sheet->instance.Id,glv_sheet->name);
 	glv_sheet->instance.oneself = NULL;
 	pthread_mutex_destroy(&glv_sheet->sheet_mutex);
+	free(glv_sheet->name);
 	free(glv_sheet);
 }
 
@@ -883,7 +885,8 @@ glvWiget glvCreateWiget(glvSheet sheet,const struct glv_wiget_listener *listener
 	pthread_mutex_unlock(&glv_sheet->sheet_mutex);			// sheet
 
 	if(listener != NULL){
-		glvWiget_setHandler_class(glv_wiget,listener->class);
+		glvWiget_setHandler_class(glv_wiget,listener->_class);
+		glvWiget_setHandler_new(glv_wiget,listener->_new);
 		glv_wiget->attr |= listener->attr;
 		glvWiget_setHandler_init(glv_wiget,listener->init);
 		glvWiget_setHandler_redraw(glv_wiget,listener->redraw);

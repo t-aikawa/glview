@@ -63,7 +63,8 @@ extern "C" {
 #define GLV_KeyRelease		(3)
 
 typedef struct _glv_window_event_func {
-	struct glv_window_listener				*class;
+	struct glv_window_listener				*_class;
+	GLV_WINDOW_EVENT_FUNC_new_t				_new;
 	GLV_WINDOW_EVENT_FUNC_init_t			init;
 	GLV_WINDOW_EVENT_FUNC_start_t			start;
 	GLV_WINDOW_EVENT_FUNC_configure_t		configure;
@@ -84,7 +85,8 @@ typedef struct _glv_window_event_func {
 } GLV_WINDOW_EVENT_FUNC_t;
 
 typedef struct _glv_sheet_event_func {
-	struct glv_sheet_listener			*class;
+	struct glv_sheet_listener			*_class;
+	GLV_SHEET_EVENT_FUNC_new_t			_new;
 	GLV_SHEET_EVENT_FUNC_init_t			init;
 	GLV_SHEET_EVENT_FUNC_reshape_t		reshape;
 	GLV_SHEET_EVENT_FUNC_redraw_t		redraw;
@@ -99,7 +101,8 @@ typedef struct _glv_sheet_event_func {
 } GLV_SHEET_EVENT_FUNC_t;
 
 typedef struct _glv_wiget_event_func {
-	struct glv_wiget_listener			*class;
+	struct glv_wiget_listener			*_class;
+	GLV_WIGET_EVENT_FUNC_new_t			_new;
 	GLV_WIGET_EVENT_FUNC_init_t			init;
 	GLV_WIGET_EVENT_FUNC_redraw_t		redraw;
 	GLV_WIGET_EVENT_FUNC_mousePointer_t	mousePointer;
@@ -379,6 +382,7 @@ EGLConfig glvGetEGLConfig_beauty(glvDisplay glv_dpy);
 EGLint		glvGetEGLVisualid(glvDisplay glv_dpy);
 int glvSelectDrawingWindow(glvWindow glv_win);
 void glvSwapBuffers(glvWindow glv_win);
+int glv_getInstanceType(void *glv_instance);
 
 int glvAllocWindowResource(glvDisplay glv_dpy,glvWindow *glv_win,char *name,const struct glv_window_listener *listener);
 GLV_WINDOW_t *_glvAllocWindowResource(GLV_DISPLAY_t *glv_dpy,char *name);
@@ -463,7 +467,8 @@ int glv_r_free_value__list(struct _glv_r_value **link);
 
 int _glv_destroyAllWindow(GLV_DISPLAY_t *glv_dpy);
 
-void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *class);
+void glvWindow_setHandler_class(glvWindow glv_win,struct glv_window_listener *_class);
+void glvWindow_setHandler_new(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_new_t _new);
 void glvWindow_setHandler_init(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_init_t init);
 void glvWindow_setHandler_start(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_start_t start);
 void glvWindow_setHandler_configure(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_configure_t configure);
@@ -482,8 +487,10 @@ void glvWindow_setHandler_action(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_action_
 void glvWindow_setHandler_key(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_key_t key);
 void glvWindow_setHandler_endDraw(glvWindow glv_win,GLV_WINDOW_EVENT_FUNC_endDraw_t endDraw);
 
-void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*class);
-void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *class);
+void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*_class);
+void glvSheet_setHandler_new(glvSheet sheet,GLV_SHEET_EVENT_FUNC_new_t _new);
+void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *_class);
+void glvWiget_setHandler_new(glvWiget wiget,GLV_WIGET_EVENT_FUNC_new_t _new);
 
 #ifdef __cplusplus
 }

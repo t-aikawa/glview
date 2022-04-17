@@ -291,6 +291,7 @@ enum cursor_type {
 //-----------------------------------
 // 関数ポインタ定義
 //-----------------------------------
+typedef int (*GLV_WINDOW_EVENT_FUNC_new_t)(glvWindow glv_win);
 typedef int (*GLV_WINDOW_EVENT_FUNC_init_t)(glvWindow glv_win,int width, int height);
 typedef int (*GLV_WINDOW_EVENT_FUNC_start_t)(glvWindow glv_win,int width, int height);
 typedef int (*GLV_WINDOW_EVENT_FUNC_configure_t)(glvWindow glv_win,int width, int height);
@@ -309,6 +310,7 @@ typedef int (*GLV_WINDOW_EVENT_FUNC_key_t)(glvWindow glv_win,unsigned int key,un
 typedef int (*GLV_WINDOW_EVENT_FUNC_endDraw_t)(glvWindow glv_win,glvTime time);
 typedef int (*GLV_WINDOW_EVENT_FUNC_terminate_t)(glvWindow glv_win);
 
+typedef int (*GLV_SHEET_EVENT_FUNC_new_t)(glvWindow glv_win,glvSheet sheet);
 typedef int (*GLV_SHEET_EVENT_FUNC_init_t)(glvWindow glv_win,glvSheet sheet,int window_width, int window_height);
 typedef int (*GLV_SHEET_EVENT_FUNC_reshape_t)(glvWindow glv_win,glvSheet sheet,int window_width, int window_height);
 typedef int (*GLV_SHEET_EVENT_FUNC_redraw_t)(glvWindow glv_win,glvSheet sheet,int drawStat);
@@ -321,6 +323,7 @@ typedef int (*GLV_SHEET_EVENT_FUNC_action_t)(glvWindow glv_win,glvSheet sheet,in
 typedef int (*GLV_SHEET_EVENT_FUNC_userMsg_t)(glvWindow glv_win,glvSheet sheet,int kind,void *data);
 typedef int (*GLV_SHEET_EVENT_FUNC_terminate_t)(glvSheet sheet);
 
+typedef int (*GLV_WIGET_EVENT_FUNC_new_t)(glvWindow glv_win,glvSheet sheet,glvWiget wiget);
 typedef int (*GLV_WIGET_EVENT_FUNC_init_t)(glvWindow glv_win,glvSheet sheet,glvWiget wiget);
 typedef int (*GLV_WIGET_EVENT_FUNC_redraw_t)(glvWindow glv_win,glvSheet sheet,glvWiget wiget);
 typedef int (*GLV_WIGET_EVENT_FUNC_mousePointer_t)(glvWindow glv_win,glvSheet sheet,glvWiget wiget,int type,glvTime time,int x,int y,int pointer_left_stat);
@@ -344,7 +347,8 @@ struct glv_frame_listener {
 };
 
 struct glv_window_listener {
-	struct glv_window_listener				*class;
+	struct glv_window_listener				*_class;
+	GLV_WINDOW_EVENT_FUNC_new_t				_new;
 	int										attr;
 	int										beauty;
 	GLV_WINDOW_EVENT_FUNC_init_t			init;
@@ -363,7 +367,8 @@ struct glv_window_listener {
 };
 
 struct glv_sheet_listener {
-	struct glv_sheet_listener			*class;
+	struct glv_sheet_listener			*_class;
+	GLV_SHEET_EVENT_FUNC_new_t			_new;
 	GLV_SHEET_EVENT_FUNC_init_t			init;
 	GLV_SHEET_EVENT_FUNC_reshape_t		reshape;
 	GLV_SHEET_EVENT_FUNC_redraw_t		redraw;
@@ -378,7 +383,8 @@ struct glv_sheet_listener {
 };
 
 struct glv_wiget_listener {
-	struct glv_wiget_listener			*class;
+	struct glv_wiget_listener			*_class;
+	GLV_WIGET_EVENT_FUNC_new_t			_new;
 	int									attr;
 	GLV_WIGET_EVENT_FUNC_init_t			init;
 	GLV_WIGET_EVENT_FUNC_redraw_t		redraw;
@@ -475,7 +481,7 @@ glvDisplay	glvOpenDisplay(char *dpyName);
 int			glvCloseDisplay(glvDisplay glv_dpy);
 
 void glvEnterEventLoop(glvDisplay glv_dpy);
-void glvEscapeEventLoop(glvDisplay glv_dpy);
+void glvEscapeEventLoop(void *glv_instance);
 
 glvWindow glvCreateFrameWindow(void *glv_instance,const struct glv_frame_listener *listener,char *name,char *title,int width, int height,glvInstanceId *id);
 glvWindow glvCreateWindow(glvWindow parent,const struct glv_window_listener *listener,char *name,int x, int y, int width, int height,int attr,glvInstanceId *id);
@@ -551,7 +557,6 @@ glvWindow glv_getWindow(void *glv_instance);
 glvWindow glv_getFrameWindow(void *glv_instance);
 int glv_getWindowType(void *glv_instance);
 int glv_getFrameInfo(void *glv_instance,GLV_FRAME_INFO_t *frameInfo);
-int glv_getInstanceType(void *glv_instance);
 glvInstanceId glv_getInstanceId(void *glv_instance);
 int glvWiget_setFocus(glvWiget wiget);
 

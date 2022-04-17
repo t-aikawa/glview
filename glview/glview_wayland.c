@@ -46,7 +46,7 @@ static int wayland_roundtrip(struct wl_display *display);
 GLV_GARBAGE_BOX_t	_glv_garbage_box;
 
 GLVINPUTFUNC_t	glv_input_func = {};
-static int running = 1;
+//static int running = 1;
 
 typedef void (*data_func_t)(void *data, size_t len,
 			    int32_t x, int32_t y, void *user_data);
@@ -1296,7 +1296,11 @@ static void xdg_wm_toplevel_handle_configure(void *data, struct xdg_toplevel *to
 
 static void xdg_wm_toplevel_handle_close(void *data, struct xdg_toplevel *xdg_surface)
 {
+#if 0
 	running = 0;
+#else
+	glvEscapeEventLoop(data);
+#endif
 }
 
 static const struct xdg_toplevel_listener xdg_wm_toplevel_listener = {
@@ -1342,7 +1346,11 @@ static void handle_zxdgV6_toplevel_configure(void *data, struct zxdg_toplevel_v6
 
 static void handle_zxdgV6_toplevel_close(void *data, struct zxdg_toplevel_v6 *zxdgV6_toplevel)
 {
+#if 0
 	running = 0;
+#else
+	glvEscapeEventLoop(data);
+#endif
 }
 
 static const struct zxdg_toplevel_v6_listener xdg_zxdgV6_toplevel_listener = {
@@ -2474,11 +2482,18 @@ void glvEnterEventLoop(glvDisplay glv_dpy)
 }
 #endif
 
-void glvEscapeEventLoop(glvDisplay glv_dpy)
+void glvEscapeEventLoop(void *glv_instance)
 {
+#if 0
 	GLV_DISPLAY_t *display = (GLV_DISPLAY_t*)glv_dpy;
 	running = 0;
 	display->running = 0;
+#else
+	GLV_DISPLAY_t *display = (GLV_DISPLAY_t*)glv_getDisplay(glv_instance);
+	if(display != NULL){
+		display->running = 0;
+	}
+#endif
 }
 
 void glvCommitWindow(glvWindow glv_win)
