@@ -22,7 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-// modified by　weston-9.0.0/clients/smoke.c
+// modified by weston-9.0.0/clients/smoke.c
 
 #include <stdlib.h>
 #include <stdio.h>

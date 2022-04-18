@@ -37,62 +37,49 @@
 #include "glview_local.h"
 
 /*
-　python3用定数値連携処理インターフェース(Python 3.9.7で動作確認済み)
-　pythonのctypesを利用してshared libraryを呼び出す場合、通常、
-　C言語側で#defineで設定した値をpython側では変数として手入力しているが、
-　プリプロセッサー処理が無いため、煩雑であり、間違ったり、
-　修正漏れによる不具合が出る可能性が高い。
-　その為、同期合わせする仕組みを作成した。
+	c言語python3用定数値連携処理インターフェース(Python 3.9.7で動作確認済み)
+	pythonのctypesを利用してshared libraryを呼び出す場合、通常、
+	C言語側で#defineで設定した値をpython側では変数として手入力しているが、
+	プリプロセッサー処理が無いため、煩雑であり、間違ったり、
+	修正漏れによる不具合が出る可能性が高い。
+	その為、同期合わせする仕組みを作成した。
 
-・条件
-　記号定数マクロのみ指定可能
-　引数付きマクロの場合は、一度記号定数マクロで定義して使用する
-　マクロ展開後に定数に展開できない場合は、使用できない(変数が含まれる場合など)
-
-#define AAAAA(a)	(a) * 1000
-をプログラム中で、AAAAA(50)として使用している場合は、
-#define AAAAA_50	AAAAA(50)
-として、
-
-// 使用例
-// C言語側）
+・C言語側条件
+	記号定数マクロのみ指定可能
+	引数付きマクロの場合は、一度記号定数マクロで定義して使用する
+	マクロ展開後に定数に展開できない場合は、使用できない(変数が含まれる場合など)
+*/
 /*
+// 使用例
 
-//　以下の３つのマクロの値を渡したい場合
-#define HOGE_CONST	0xff123456
+// C言語側）
+
+// 以下の3つのマクロの値をpython側に渡したい場合
+#define HOGE_CONST1	0xff123456
 #define HOGE_CONST2	"[test string test]"
 #define HOGE_CONST3	(132.6)
 
-// GLV_CONST_DEFINE(マクロ名、型)：
+// GLV_CONST_DEFINE(マクロ名、型);
 // マクロの入れ子（多重定義）も展開される
 // 記号定数マクロのみ指定可能なので、引数付きマクロの内容を
-// 型の名前は、ctypesの型定義名称から’c_'を外した名称が設定できる
+// 型の名前は、ctypesの型定義名称から'c_'を外した名称が設定できる
 // 			(size_t,int8,uint8,int16),uint16,int32,uint32,int64,uint64,char_p,float,double)
-GLV_CONST_DEFINE(HOGE_CONST,uint32);
+GLV_CONST_DEFINE(HOGE_CONST1,uint32);
 GLV_CONST_DEFINE(HOGE_CONST2,char_p);
 GLV_CONST_DEFINE(HOGE_CONST3,float);
 
-//例えば、GLV_CONST_DEFINE(HOGE_CONST,uint32);と記述した場合、以下の処理に展開される
-struct c_const_value glv_c__AIKAWA_CONST = {.type = "c_""uint32" , .v.c_uint32 = (0xff123456)};
+//例えば、GLV_CONST_DEFINE(HOGE_CONST1,uint32);と記述した場合、以下の処理に展開される
+struct c_const_value glv_c__HOGE_CONST1 = {.type = "c_""uint32" , .v.c_uint32 = (0xff123456)};
 
-// 記号定数マクロのみ指定可能なので、引数付きマクロの内容を指定した場合、一度記号定数マクロに置き換えて指定する
+// (python言語側）
 
-#define AAAAA(a)	(a) * 1000
-// をプログラム中で、AAAAA(50)として使用している場合は、
-#define AAAAA_50	AAAAA(50)
-// として、
-GLV_CONST_DEFINE(AAAAA_50,int32);
+HOGE_CONST1 = glv_linking_value('HOGE_CONST1')
+HOGE_CONST2 = glv_linking_value('HOGE_CONST2')
+HOGE_CONST3 = glv_linking_value('HOGE_CONST3')
 
-// python言語側）
-
-HOGE__ = glv_linking_value('HOGE_CONST')
-print('HOGE__',type(HOGE__),'{:x}'.format(HOGE__))
-
-HOGE__2 = glv_linking_value('HOGE_CONST2')
-print('HOGE__2',type(HOGE__2),HOGE__2)
-
-HOGE__3 = glv_linking_value('HOGE_CONST3')
-print('HOGE__3',type(HOGE__3),HOGE__3)
+print('HOGE_CONST1:',type(HOGE_CONST1),'{:x}'.format(HOGE_CONST1))
+print('HOGE_CONST2:',type(HOGE_CONST2),HOGE_CONST2)
+print('HOGE_CONST3:',type(HOGE_CONST3),HOGE_CONST3)
 
 */
 
@@ -100,7 +87,7 @@ print('HOGE__3',type(HOGE__3),HOGE__3)
 /*
 from ctypes import *
 
-class c_structure(Structure):
+class c_Structure(Structure):
     pass
 
 class c_union(Union):
@@ -120,7 +107,7 @@ class   glv_c_interface_v(c_union):
                 ("c_float", c_float),
                 ("c_double", c_double)]
 
-class glv_c_interface(c_structure):
+class glv_c_interface(c_Structure):
     _fields_ = [("data_type", c_char_p),
                 ("data", glv_c_interface_v)]
 
