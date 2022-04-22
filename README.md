@@ -63,6 +63,7 @@ sudo apt-get install meson
 
 git clone https://github.com/t-aikawa/glview.git
 cd glview
+chmod +x m mm simple-egl smoke test s001 s002
 ./m
 ---------------------------------------------------------------------
 ./s001
