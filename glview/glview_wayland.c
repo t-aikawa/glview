@@ -205,9 +205,14 @@ void _glvResizeWindow(GLV_WINDOW_t *glv_window,int x,int y,int width,int height)
 	}
 }
 
-static void _glv_window_list_on_reshape(GLV_DISPLAY_t *glv_dpy,GLV_WINDOW_t *frame_window,int width,int height)
+void _glv_window_list_on_reshape(GLV_WINDOW_t *frame_window,int width,int height)
 {
+	GLV_DISPLAY_t *glv_dpy;
 	GLV_WINDOW_t *glv_window;
+	if(frame_window == NULL){
+		return;
+	}
+	glv_dpy = frame_window->glv_dpy;
 	pthread_mutex_lock(&glv_dpy->display_mutex);			// display
 
 	wl_list_for_each(glv_window, &glv_dpy->window_list, link){
@@ -1220,10 +1225,12 @@ static void _Window_configure(GLV_WINDOW_t *glv_frame,int width,int height)
 #endif
 		//printf("_Window_configure frameInfo(%d,%d) inner(%d,%d)\n",glv_frame->frameInfo.frame_width,glv_frame->frameInfo.frame_height,glv_frame->frameInfo.inner_width,glv_frame->frameInfo.inner_height);
 		_glvOnConfigure(glv_frame,width, height);
+#if 0	// GLV_ON_CONFIGUREイベント受信先で処理するように変更
 		if(glv_frame->eventFunc.configure == NULL){
 			// フレームにconfigureの処理が記述されていない場合フレーム直下のウインドウは自動リサイズする
-			_glv_window_list_on_reshape(glv_frame->glv_dpy,glv_frame,glv_frame->frameInfo.inner_width,glv_frame->frameInfo.inner_height);
+			_glv_window_list_on_reshape(glv_frame,glv_frame->frameInfo.inner_width,glv_frame->frameInfo.inner_height);
 		}
+#endif
 	}
 	pthread_mutex_unlock(&glv_frame->serialize_mutex);				// window serialize_mutex
 }
@@ -1647,6 +1654,26 @@ static void display_add_data_device(GLV_DISPLAY_t *glv_display, uint32_t id, uin
 	}
 }
 
+static void shm_format(void *data,struct wl_shm *shm,uint32_t format)
+{
+	if(format == WL_SHM_FORMAT_ARGB8888){
+		printf("%u: ARGB8888\n", format);
+	} else if(format == WL_SHM_FORMAT_XRGB8888){
+		printf("%u: XRGB8888\n", format);
+	} else {
+		printf("0x%08X: '%c%c%c%c'\n",
+			format,
+			(char)(format >> 24),
+			(char)(format >> 16),
+			(char)(format >> 8),
+			(char)format);
+	}
+}
+
+static const struct wl_shm_listener shm_listener = {
+	shm_format
+};
+
 static void display_add_input(GLV_DISPLAY_t *glv_display, struct wl_registry *registry,uint32_t id, int version)
 {
 	struct _glvinput *input = calloc(1, sizeof *input);
@@ -1782,6 +1809,7 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
 	} else if(strcmp(interface, "wl_shm") == 0) {
 		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_shm , version = %d\n",version);
 		d->shm = wl_registry_bind(registry, id, &wl_shm_interface, 1);
+		//wl_shm_add_listener(d->shm, &shm_listener, NULL);
 	} else if (strcmp(interface, "wl_seat") == 0) {
 		GLV_IF_DEBUG_VERSION printf("glview:registry-interface-wl_seat , version = %d\n",version);
 		display_add_input(glv_display,registry,id,version);

@@ -39,7 +39,7 @@
 // ----------------------------------------------------
 #define GLV_VERSION_MAJOR	(0)
 #define GLV_VERSION_MINOR	(1)
-#define GLV_VERSION_PATCH	(16)
+#define GLV_VERSION_PATCH	(17)
 // ----------------------------------------------------
 
 #define GLV_OPENGL_ES1_API	(1)
@@ -940,8 +940,20 @@ void *glvExecMsg(GLV_WINDOW_t *glv_window,pthread_msq_msg_t *rmsg)
 				}
 			}
 			_glv_sheet_with_wiget_reshape_cb(glv_window);
+#if 1
+			if(glv_window->eventFunc.configure == NULL){
+				// フレームにconfigureの処理が記述されていない場合フレーム直下のウインドウは自動リサイズする
+				_glv_window_list_on_reshape(glv_window,glv_window->frameInfo.inner_width,glv_window->frameInfo.inner_height);
+			}
+#endif
 			break;
 		case GLV_ON_RESHAPE:
+#if 1
+			if(glv_window->resharp_serial > (uint32_t)rmsg->data[6]){
+				GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"[%s] GLV_ON_RESHAPE(%d,%d) sirial(%d > %d)\n"GLV_DEBUG_END_COLOR,glv_window->name,(int)rmsg->data[4],(int)rmsg->data[5],glv_window->resharp_serial,(uint32_t)rmsg->data[6]);
+				break;
+			}
+#endif
 			GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"[%s] GLV_ON_RESHAPE(%d,%d)\n"GLV_DEBUG_END_COLOR,glv_window->name,(int)rmsg->data[4],(int)rmsg->data[5]);
 			/* 描画サイズ変更 */
 			_glvResizeWindow(glv_window,rmsg->data[2],rmsg->data[3],rmsg->data[4],rmsg->data[5]);
@@ -1633,6 +1645,8 @@ int glvOnReShape(glvWindow glv_win,int x, int y,int width, int height)
 	}
 	teamLeader = glv_window->teamLeader;
 
+	glv_window->resharp_serial++;
+
 	if(x == -1){
 		x = glv_window->x;
 	}
@@ -1652,6 +1666,7 @@ int glvOnReShape(glvWindow glv_win,int x, int y,int width, int height)
 	smsg.data[3] = y;
 	smsg.data[4] = width;
 	smsg.data[5] = height;
+	smsg.data[6] = glv_window->resharp_serial;
 	GLV_IF_DEBUG_MSG printf(GLV_DEBUG_MSG_COLOR"glvOnReShape  RESHAPE %d,%d\n"GLV_DEBUG_END_COLOR,width,height);
 
 	pthread_msq_msg_send(&teamLeader->ctx.queue,&smsg,0);

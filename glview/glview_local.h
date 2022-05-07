@@ -244,6 +244,7 @@ typedef struct _glv_window {
 	struct wl_list		sheet_list;
 	int					reqSwapBuffersFlag;
 	uint32_t			configure_serial;
+	uint32_t			resharp_serial;
 	uint32_t			draw_serial;
 	int					edges;
 	/* --------------------------- */
@@ -440,6 +441,7 @@ void _glvDestroyGarbageBox(void);
 int _glvGcGarbageBox(void);
 
 GLV_WINDOW_t *_glvGetWindowFromId(GLV_DISPLAY_t *glv_dpy,glvInstanceId windowId);
+void _glv_window_list_on_reshape(GLV_WINDOW_t *frame_window,int width,int height);
 
 // ibus
 int glv_ime_startIbus(struct _glvinput *glv_input);
