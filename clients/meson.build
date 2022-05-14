@@ -2,7 +2,7 @@
 
 cc = meson.get_compiler('c')
 dep_libm = cc.find_library('m')
-glesv2 = dependency('glesv2')
+opengl = dependency(opengl_pkg)
 
 executable(
     'glview_test', [
@@ -13,7 +13,7 @@ executable(
     ],
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glesv2,dep_libm])
+	dependencies : [opengl,dep_libm])
 
 executable(
     'smoke', [
@@ -21,7 +21,7 @@ executable(
     ],
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glesv2,dep_libm])
+	dependencies : [opengl,dep_libm])
 
 executable(
     'simple-egl', [
@@ -29,7 +29,7 @@ executable(
     ],
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glesv2,dep_libm])
+	dependencies : [opengl,dep_libm])
 
 executable(
     's001', [
@@ -37,7 +37,7 @@ executable(
     ],
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glesv2,dep_libm])
+	dependencies : [opengl,dep_libm])
 
 executable(
     's002', [
@@ -45,4 +45,4 @@ executable(
     ],
     include_directories: includes,  # インクルードディレクトリの指定
     link_with: [glview_lib , es1emu_lib , pthread_tool_lib],  # リンクするライブラリの指定
-	dependencies : [glesv2,dep_libm])
+	dependencies : [opengl,dep_libm])

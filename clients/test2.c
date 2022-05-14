@@ -63,7 +63,9 @@ static const char *vert_shader_text =
 	"}\n";
 
 static const char *frag_shader_text =
+#ifdef GLV_OPENGL_ES_SERIES
 	"precision mediump float;\n"
+#endif
 	"varying vec4 v_color;\n"
 	"void main() {\n"
 	"  gl_FragColor = v_color;\n"

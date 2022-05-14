@@ -144,25 +144,25 @@ void glvFont_GetPosition(int *x_pos,int *y_pos)
 	*y_pos = font_draw_info->y_ofs;
 }
 
-void glvFont_setColorRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void glvFont_setColor4i(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	font_draw_info->gColor = ((a<<24) | (r<<16) | (g<<8) | (b));
 }
 
-void glvFont_SetBkgdColorRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void glvFont_SetBkgdColor4i(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	font_draw_info->gBkgdColor = ((a<<24) | (r<<16) | (g<<8) | (b));
 }
 
-void glvFont_setOutLineColorRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void glvFont_setOutLineColor4i(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	font_draw_info->gOutLineColor = ((a<<24) | (r<<16) | (g<<8) | (b));
 }
 
-void glvFont_setColor(unsigned int color)
+void glvFont_setColorRGBA(unsigned int color)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	font_draw_info->gColor = color;
@@ -174,7 +174,7 @@ void glvFont_setOutLineColor(unsigned int color)
 	font_draw_info->gOutLineColor = color;
 }
 
-void glvFont_setBkgdColor(unsigned int color)
+void glvFont_setBkgdColorRGBA(unsigned int color)
 {
 	THREAD_SAFE_BUFFER_t	*font_draw_info = get_thread_safe_buffer();
 	font_draw_info->gBkgdColor = color;
@@ -195,9 +195,9 @@ void glvFont_setFontAngle(float angle)
 
 void glvFont_DefaultColor(void)
 {
-	glvFont_setColorRGBA		(  0,   0,   0, 255);
-	glvFont_SetBkgdColorRGBA	(  0,   0,   0,   0);
-	glvFont_setOutLineColorRGBA	(255,   0,   0, 255);
+	glvFont_setColor4i			(  0,   0,   0, 255);
+	glvFont_SetBkgdColor4i		(  0,   0,   0,   0);
+	glvFont_setOutLineColor4i	(255,   0,   0, 255);
 }
 
 void glvFont_lineSpace(int n)

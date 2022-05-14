@@ -423,18 +423,18 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 	switch(kind){
 		case GLV_WIGET_STATUS_FOCUS:
 			gBkgdColor = gFocusBkgdColor;
-			glColor4f_RGBA(gFocusBkgdColor);
+			glvGl_ColorRGBA(gFocusBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_PRESS:
 			gBkgdColor = gPressBkgdColor;
-			glColor4f_RGBA(gPressBkgdColor);
+			glvGl_ColorRGBA(gPressBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_RELEASE:
 		default:
 			gBkgdColor = gReleaseBkgdColor;
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 	}
@@ -491,8 +491,8 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 	user_data->advance_x = malloc(sizeof(int16_t) * (user_data->utf32_length + user_data->utf32_preedit_length + 2));
 
 	if(user_data->cursorIndex < 0){
-		glvFont_setColor(gFontColor);
-		glvFont_setBkgdColor(gBkgdColor);
+		glvFont_setColorRGBA(gFontColor);
+		glvFont_setBkgdColorRGBA(gBkgdColor);
 		glvFont_DrawUTF32String(user_data->utf32_string,user_data->utf32_length,user_data->advance_x);
 	}else{
 		last = 0;
@@ -500,15 +500,15 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 		for(i=0;i<user_data->cursorIndex;i++){
 			if(((select_mode == 1) || (insert_mode == 0)) && ((utf32_string_attr[i] & 4) == 4)){
 				if(select_mode == 0){
-					glvFont_setColor(gOverwriteModeCursorFontColor);
-					glvFont_setBkgdColor(gOverwriteModeCursorBkgdColor);
+					glvFont_setColorRGBA(gOverwriteModeCursorFontColor);
+					glvFont_setBkgdColorRGBA(gOverwriteModeCursorBkgdColor);
 				}else{
-					glvFont_setColor(gSerectionFontColor);
-					glvFont_setBkgdColor(gSerectionBkgdColor);
+					glvFont_setColorRGBA(gSerectionFontColor);
+					glvFont_setBkgdColorRGBA(gSerectionBkgdColor);
 				}
 			}else{
-				glvFont_setColor(gFontColor);
-				glvFont_setBkgdColor(gBkgdColor);
+				glvFont_setColorRGBA(gFontColor);
+				glvFont_setBkgdColorRGBA(gBkgdColor);
 			}
 			glvFont_DrawUTF32String(user_data->utf32_string+i,1,work_advance_x);
 			user_data->advance_x[i + 1] = last + work_advance_x[1];
@@ -523,8 +523,8 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 				}
 			}
 			if((user_data->utf32_preedit_attr[i] & 2) == 2){
-				glvFont_setColor(gImeCandidateFontColor);
-				glvFont_setBkgdColor(gImeCandidateBkgdColor);
+				glvFont_setColorRGBA(gImeCandidateFontColor);
+				glvFont_setBkgdColorRGBA(gImeCandidateBkgdColor);
 
 				// IME候補表示エリア位置設定
 				if(candidateStat < 2){
@@ -532,8 +532,8 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 					candidateStat = 2;
 				}
 			}else{
-				glvFont_setColor(gImeUnderlineFontColor);
-				glvFont_setBkgdColor(gImeUnderlineBkgdColor);
+				glvFont_setColorRGBA(gImeUnderlineFontColor);
+				glvFont_setBkgdColorRGBA(gImeUnderlineBkgdColor);
 			}
 			glvFont_DrawUTF32String(user_data->utf32_preedit_string+i,1,work_advance_x);
 			user_data->advance_x[i + user_data->cursorIndex + 1] = last + work_advance_x[1];
@@ -543,22 +543,22 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 				int x1,x2;
 				x1 = user_data->advance_x[i + user_data->cursorIndex    ];
 				x2 = user_data->advance_x[i + user_data->cursorIndex + 1];
-				glColor4f_RGBA(gImeUnderlineColor);
+				glvGl_ColorRGBA(gImeUnderlineColor);
 				glvGl_drawRectangle(x+x1,y+geometry.height - 5,(x2 - x1),1);
 			}
 		}
 		for(i=user_data->cursorIndex;i<user_data->utf32_length;i++){
 			if(((select_mode == 1) || (insert_mode == 0))  && ((utf32_string_attr[i] & 4) == 4)){
 				if(select_mode == 0){
-					glvFont_setColor(gOverwriteModeCursorFontColor);
-					glvFont_setBkgdColor(gOverwriteModeCursorBkgdColor);
+					glvFont_setColorRGBA(gOverwriteModeCursorFontColor);
+					glvFont_setBkgdColorRGBA(gOverwriteModeCursorBkgdColor);
 				}else{
-					glvFont_setColor(gSerectionFontColor);
-					glvFont_setBkgdColor(gSerectionBkgdColor);
+					glvFont_setColorRGBA(gSerectionFontColor);
+					glvFont_setBkgdColorRGBA(gSerectionBkgdColor);
 				}
 			}else{
-				glvFont_setColor(gFontColor);
-				glvFont_setBkgdColor(gBkgdColor);
+				glvFont_setColorRGBA(gFontColor);
+				glvFont_setBkgdColorRGBA(gBkgdColor);
 			}
 			glvFont_DrawUTF32String(user_data->utf32_string+i,1,work_advance_x);
 			user_data->advance_x[i + 1 + user_data->utf32_preedit_length] = last + work_advance_x[1];
@@ -586,7 +586,7 @@ static int wiget_text_input_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 	}
 
 	if((select_mode == 0) && (user_data->cursorIndex >= 0)){
-		glColor4f_RGBA(gInsertModeCursorColor);
+		glvGl_ColorRGBA(gInsertModeCursorColor);
 		if(user_data->utf32_preedit_length == 0){
 			if((insert_mode == 1) || (user_data->cursorIndex == user_data->utf32_length)){
 				user_data->cursorPos = user_data->advance_x[user_data->cursorIndex];
@@ -766,18 +766,18 @@ static int wiget_text_output_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wi
 	switch(kind){
 		case GLV_WIGET_STATUS_FOCUS:
 			gBkgdColor = gFocusBkgdColor;
-			glColor4f_RGBA(gFocusBkgdColor);
+			glvGl_ColorRGBA(gFocusBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_PRESS:
 			gBkgdColor = gPressBkgdColor;
-			glColor4f_RGBA(gPressBkgdColor);
+			glvGl_ColorRGBA(gPressBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_RELEASE:
 		default:
 			gBkgdColor = gReleaseBkgdColor;
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 	}
@@ -793,8 +793,8 @@ static int wiget_text_output_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wi
 		}else{
 			glvFont_SetPosition(x + w / 2,y + (fontSize+6) / 2);
 		}
-		glvFont_setColor(gFontColor);
-		glvFont_setBkgdColor(gBkgdColor);
+		glvFont_setColorRGBA(gFontColor);
+		glvFont_setBkgdColorRGBA(gBkgdColor);
 		glvFont_SetlineSpace(lineSpace);
 
 		glvFont_printf("%s",user_data->utf8_string);

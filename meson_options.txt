@@ -1,0 +1,7 @@
+
+option(
+	'opengl',
+	type: 'string',
+	value: 'gles',
+	description: 'opengl= gles or opengl'
+)

@@ -610,7 +610,7 @@ static int frame_init(glvWindow glv_win,int width,int height)
 	glv_getValue(glv_win,"back"		,"i",&user_data->back);
 	glv_getValue(glv_win,"shadow"	,"i",&user_data->shadow);
 
-#ifdef GLV_OPENGL_ES1
+#ifndef _GLES1_EMULATION
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 	glDisable(GL_LIGHTING);
 	glShadeModel(GL_FLAT);
@@ -636,7 +636,11 @@ static int frame_init(glvWindow glv_win,int width,int height)
 	glLoadIdentity();
 
 	// 座標体系設定
+#ifdef _GLES1_EMULATION
 	glOrthof(0, width, height, 0, -1, 1);
+#else
+	glOrtho(0, width, height, 0, -1, 1);
+#endif
 
 	// モデルビュー行列の設定
 	glMatrixMode(GL_MODELVIEW);
@@ -721,7 +725,7 @@ static int frame_update(glvWindow glv_win,int drawStat)
 		case GLV_FRAME_BACK_DRAW_OFF:
 			break;
 		case GLV_FRAME_BACK_DRAW_INNER:
-			glColor4f_RGBA(gBkgdColor);
+			glvGl_ColorRGBA(gBkgdColor);
 			glvGl_drawRectangle(frameInfo->left_shadow_size + frameInfo->left_size,
 								frameInfo->top_shadow_size  + frameInfo->top_size,
 								frameInfo->inner_width,
@@ -729,7 +733,7 @@ static int frame_update(glvWindow glv_win,int drawStat)
 			break;
 		case GLV_FRAME_BACK_DRAW_FULL:
 		default:
-			glColor4f_RGBA(gBkgdColor);
+			glvGl_ColorRGBA(gBkgdColor);
 			glvGl_drawRectangle(frameInfo->left_shadow_size,
 								frameInfo->top_shadow_size,
 								frameInfo->inner_width + frameInfo->left_size + frameInfo->right_edge_size,
@@ -737,14 +741,14 @@ static int frame_update(glvWindow glv_win,int drawStat)
 			break;
 	}
 #if 0
-	glColor4f_RGBA(gBkgdColor);
+	glvGl_ColorRGBA(gBkgdColor);
 	glvGl_drawRectangle(frameInfo->left_shadow_size,
 						frameInfo->top_shadow_size,
 						frameInfo->inner_width + frameInfo->left_size + frameInfo->right_edge_size,
 						frameInfo->inner_height + frameInfo->top_size + frameInfo->bottom_user_area_size + frameInfo->bottom_edge_size);
 #endif
 #if 0
-	glColor4f_RGBA(gBkgdColor);
+	glvGl_ColorRGBA(gBkgdColor);
 	glvGl_drawRectangle(frameInfo->left_shadow_size + frameInfo->left_size,
 						frameInfo->top_shadow_size  + frameInfo->top_size,
 						frameInfo->inner_width,
@@ -757,8 +761,8 @@ static int frame_update(glvWindow glv_win,int drawStat)
     }else{
 		gFontColor = GLV_SET_RGBA(100,100,100,255);
     }
-	glvFont_setColor(gFontColor);
-	glvFont_setBkgdColor(gBkgdColor);
+	glvFont_setColorRGBA(gFontColor);
+	glvFont_setBkgdColorRGBA(gBkgdColor);
 	glvFont_SetStyle(GLV_FONT_NAME_NORMAL,16,0.0f,0,GLV_FONT_NAME | GLV_FONT_SIZE | GLV_FONT_CENTER);
 	glvFont_SetPosition(frameInfo->frame_width/2,(2+frameInfo->top_name_size/2 + frameInfo->top_shadow_size + frameInfo->top_edge_size/2));
 
@@ -844,7 +848,11 @@ int frame_reshape(glvWindow glv_win,int width, int height)
 	glLoadIdentity();
 
 	// 座標体系設定
+#ifdef _GLES1_EMULATION
 	glOrthof(0, width, height, 0, -1, 1);
+#else
+	glOrtho(0, width, height, 0, -1, 1);
+#endif
 
 	// モデルビュー行列の設定
 	glMatrixMode(GL_MODELVIEW);

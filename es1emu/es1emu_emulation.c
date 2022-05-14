@@ -22,18 +22,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "config.h"
 #include <pthread.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <GLES2/gl2.h>
 //#include <GLES2/gl2ext.h>
 #include "es1emu_emulation.h"
-#include "es1emu_shader.h"
-#include "es1emu_matrix.h"
 
 #ifdef _GLES1_EMULATION
+
+#include "es1emu_shader.h"
+#include "es1emu_matrix.h"
 
 #define _GL_PTHREAD_SAFE
 //------------------------------------------------------------------------------
@@ -463,7 +466,7 @@ void es1emu_LoadMatrix()
 	//glUniform4fv(program->uColor, 1, (GLfloat*)&param->color);
 }
 
-void GL_APIENTRY glEnableClientState (GLenum array)
+void GL_APIENTRY es1emu_glEnableClientState (GLenum array)
 {
 	ES1PARAMS* param = getParams();
 	PROGRAM_INFO* program = &param->program[0];
@@ -487,7 +490,7 @@ void GL_APIENTRY glEnableClientState (GLenum array)
 		break;
 	}
 }
-void GL_APIENTRY glDisableClientState (GLenum array)
+void GL_APIENTRY es1emu_glDisableClientState (GLenum array)
 {
 	ES1PARAMS* param = getParams();
 	PROGRAM_INFO* program = &param->program[0];
@@ -512,7 +515,7 @@ void GL_APIENTRY glDisableClientState (GLenum array)
 	}
 }
 
-void GL_APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+void GL_APIENTRY es1emu_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	ES1PARAMS* param = getParams();
 	PROGRAM_INFO* program = &param->program[0];
@@ -525,7 +528,7 @@ void GL_APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 	glUniform4fv(program->uColor, 1, (GLfloat*)&param->color);
 }
 
-void GL_APIENTRY glPushMatrix(void)
+void GL_APIENTRY es1emu_glPushMatrix(void)
 {
 	ES1PARAMS	*param = getParams();
 	MATRIX_FILO	*filo = &param->filo[param->mode];
@@ -535,7 +538,7 @@ void GL_APIENTRY glPushMatrix(void)
 	}
 }
 
-void GL_APIENTRY glPopMatrix(void)
+void GL_APIENTRY es1emu_glPopMatrix(void)
 {
 	ES1PARAMS	*param = getParams();
 	MATRIX_FILO	*filo = &param->filo[param->mode];
@@ -545,7 +548,7 @@ void GL_APIENTRY glPopMatrix(void)
 	}
 }
 
-void GL_APIENTRY glMatrixMode(GLenum mode)
+void GL_APIENTRY es1emu_glMatrixMode(GLenum mode)
 {
 	ES1PARAMS *param = getParams();
 
@@ -553,44 +556,117 @@ void GL_APIENTRY glMatrixMode(GLenum mode)
 	param->pMat = &param->filo[param->mode].cur;
 }
 
-void GL_APIENTRY glLoadIdentity(void)
+void GL_APIENTRY es1emu_glLoadIdentity(void)
 {
 	es1emu_LoadIdentityMatrix(getParams()->pMat);
 }
 
-void GL_APIENTRY glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
+void GL_APIENTRY es1emu_glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
 {
 	es1emu_OrthoMatrix(getParams()->pMat, left, right, bottom,top, zNear, zFar);
 }
 
-void GL_APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+void GL_APIENTRY es1emu_glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
 	es1emu_RotateMatrix(getParams()->pMat, angle, x, y, z);
 }
 
-void GL_APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z)
+void GL_APIENTRY es1emu_glScalef (GLfloat x, GLfloat y, GLfloat z)
 {
 	es1emu_ScaleMatrix(getParams()->pMat, x, y, z);
 }
 
-void GL_APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z)
+void GL_APIENTRY es1emu_glTranslatef (GLfloat x, GLfloat y, GLfloat z)
 {
 	es1emu_TranslateMatrix(getParams()->pMat, x, y, z);
 }
 
-void GL_APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+void GL_APIENTRY es1emu_glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
 	glVertexAttribPointer(ATTR_LOC_POS, size, type, GL_FALSE, sizeof(float)*size, pointer);
 }
 
-void GL_APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+void GL_APIENTRY es1emu_glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
 	glVertexAttribPointer(ATTR_LOC_COLOR, size, type, GL_TRUE, sizeof(char)*size, pointer);
 }
 
-void GL_APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+void GL_APIENTRY es1emu_glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
 	glVertexAttribPointer(ATTR_LOC_TEXTURE, size, type, GL_FALSE, sizeof(float)*size, pointer);
 }
+
+// ========================================================================================================
+#if 1
+void GL_APIENTRY glEnableClientState(GLenum array)
+{
+	es1emu_glEnableClientState(array);
+}
+
+void GL_APIENTRY glDisableClientState(GLenum array)
+{
+	es1emu_glDisableClientState(array);
+}
+
+void GL_APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+{
+	es1emu_glColor4f(red, green, blue, alpha);
+}
+
+void GL_APIENTRY glPopMatrix(void)
+{
+	es1emu_glPopMatrix();
+}
+
+void GL_APIENTRY glPushMatrix(void)
+{
+	es1emu_glPushMatrix();
+}
+
+void GL_APIENTRY glMatrixMode(GLenum mode)
+{
+	es1emu_glMatrixMode(mode);
+}
+
+void GL_APIENTRY glLoadIdentity(void)
+{
+	es1emu_glLoadIdentity();
+}
+
+void GL_APIENTRY glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
+{
+	es1emu_glOrthof(left, right, bottom, top, zNear, zFar);
+}
+
+void GL_APIENTRY glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+{
+	es1emu_glRotatef(angle, x, y, z);
+}
+
+void GL_APIENTRY glScalef(GLfloat x, GLfloat y, GLfloat z)
+{
+	es1emu_glScalef(x, y, z);
+}
+
+void GL_APIENTRY glTranslatef(GLfloat x, GLfloat y, GLfloat z)
+{
+	es1emu_glTranslatef(x, y, z);
+}
+
+void GL_APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	es1emu_glVertexPointer(size, type, stride, pointer);
+}
+
+void GL_APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	es1emu_glColorPointer(size, type, stride, pointer);
+}
+
+void GL_APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	es1emu_glTexCoordPointer(size, type, stride, pointer);
+}
+#endif
 
 #endif // _GLES1_EMULATION

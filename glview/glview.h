@@ -24,18 +24,8 @@
 #ifndef GLVIEW_H
 #define GLVIEW_H
 
-#define	 GLV_OPENGL_ES2
+#include "glview_opengl.h"
 
-#ifdef  GLV_OPENGL_ES2
-#include <GLES2/gl2.h>
-//#include <GLES2/gl2ext.h>
-#include "es1emu_emulation.h"
-#else
-#include <GLES/gl.h>
-#include <GLES/glext.h>
-#endif /* GLV_OPENGL_ES2 */
-#include <EGL/egl.h>
-//#include <EGL/eglext.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "pthread_msq.h"

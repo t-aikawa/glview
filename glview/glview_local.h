@@ -150,6 +150,8 @@ typedef struct _glv_display {
 	pthread_t				threadId;
 	EGLNativeDisplayType	native_dpy;
 	EGLDisplay				egl_dpy;
+	EGLint					egl_major;
+	EGLint					egl_minor;
 	EGLConfig				egl_config_normal;
 	EGLConfig				egl_config_beauty;
 	EGLint					vid;
@@ -194,7 +196,6 @@ typedef struct _glvContext {
 	pthread_t			threadId;
 	int					runThread;
 	int					endReason;
-	int					api;
 	EGLConfig			egl_config;
 	EGLSurface			egl_surf;
 	pthread_msq_id_t	queue;
@@ -493,6 +494,8 @@ void glvSheet_setHandler_class(glvSheet sheet,struct glv_sheet_listener	*_class)
 void glvSheet_setHandler_new(glvSheet sheet,GLV_SHEET_EVENT_FUNC_new_t _new);
 void glvWiget_setHandler_class(glvWiget wiget,struct glv_wiget_listener *_class);
 void glvWiget_setHandler_new(glvWiget wiget,GLV_WIGET_EVENT_FUNC_new_t _new);
+
+int glv_printOpenGLRuntimeEnvironment(glvDisplay glv_dpy);
 
 #ifdef __cplusplus
 }

@@ -30,20 +30,12 @@
 #include <time.h>
 #include <errno.h>
 #include <xkbcommon/xkbcommon.h>
-
 #include "wayland-util.h"
+
+#include "config.h"
 #include "glview.h"
 #include "weston-client-window.h"
 #include "glview_local.h"
-
-// ----------------------------------------------------
-#define GLV_VERSION_MAJOR	(0)
-#define GLV_VERSION_MINOR	(1)
-#define GLV_VERSION_PATCH	(17)
-// ----------------------------------------------------
-
-#define GLV_OPENGL_ES1_API	(1)
-#define GLV_OPENGL_ES2_API	(2)
 
 static int glv_system_onetime_counter = 0;
 
@@ -149,13 +141,10 @@ glvDisplay glvOpenDisplay(char *dpyName)
 	EGLint egl_major, egl_minor;
 	EGLBoolean rc;
 	EGLint num_configs;
-	EGLenum api;
 	EGLContext	egl_ctx;
 
 	static EGLint attribs_normal[] = {
-#ifdef GLV_OPENGL_ES2
-		EGL_RENDERABLE_TYPE,EGL_OPENGL_ES2_BIT,
-#endif
+		EGL_RENDERABLE_TYPE,GLV_EGL_RENDERABLE_TYPE,
 		EGL_RED_SIZE, 8,
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
@@ -165,9 +154,7 @@ glvDisplay glvOpenDisplay(char *dpyName)
 		EGL_NONE
 	};
 	static EGLint attribs_beauty[] = {
-#ifdef GLV_OPENGL_ES2
-		EGL_RENDERABLE_TYPE,EGL_OPENGL_ES2_BIT,
-#endif
+		EGL_RENDERABLE_TYPE,GLV_EGL_RENDERABLE_TYPE,
 		EGL_RED_SIZE, 8,
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
@@ -273,17 +260,23 @@ glvDisplay glvOpenDisplay(char *dpyName)
 	}
 #endif
 
-#ifdef GLV_OPENGL_ES2
-   api = GLV_OPENGL_ES2_API;
-#else
-   api = GLV_OPENGL_ES1_API;
-#endif
 	//// egl-contexts collect all state descriptions needed required for operation
+#ifdef GLV_OPENGL_ES_SERIES
 	EGLint ctxattr[] = {
-		EGL_CONTEXT_CLIENT_VERSION, 2,	/* 1:opengles1.1 2:opengles2.0 */
+		EGL_CONTEXT_CLIENT_VERSION, GLV_EGL_CONTEXT_CLIENT_VERSION,
 		EGL_NONE
 	};
-	ctxattr[1] = api;
+#endif
+#ifdef GLV_OPENGL_GL_SERIES
+	EGLint ctxattr[] = {
+		EGL_CONTEXT_MAJOR_VERSION,GLV_EGL_CONTEXT_MAJOR_VERSION,
+		EGL_CONTEXT_MINOR_VERSION,GLV_EGL_CONTEXT_MINOR_VERSION,
+		EGL_CONTEXT_OPENGL_PROFILE_MASK,GLV_EGL_CONTEXT_OPENGL_PROFILE_MASK,
+		EGL_NONE
+	};
+#endif
+
+	eglBindAPI(GLV_EGL_OPENGL_API_TYPE);
 	egl_ctx = eglCreateContext(egl_dpy,glv_dpy->egl_config_normal,EGL_NO_CONTEXT,ctxattr);
 	if(egl_ctx == EGL_NO_CONTEXT ) {
 		fprintf(stderr,"glvOpenDisplay:Unable to create EGL context (eglError: %d)\n", eglGetError());
@@ -295,6 +288,8 @@ glvDisplay glvOpenDisplay(char *dpyName)
 	eglSwapInterval(egl_dpy, 0);
 
 	glv_dpy->egl_dpy = egl_dpy;
+	glv_dpy->egl_major = egl_major;
+	glv_dpy->egl_minor = egl_minor;
 
 	// ---------------------------------------------------------------------------
 	{
@@ -326,14 +321,18 @@ glvDisplay glvOpenDisplay(char *dpyName)
 		return(NULL);
 	}
 
-#ifdef GLV_OPENGL_ES2
+#ifdef _GLES1_EMULATION
 	es1emu_Init();
 #endif
 
+	GLV_IF_DEBUG_VERSION printf("glview:EGL_VERSION   = %d.%d\n", egl_major, egl_minor);
 	GLV_IF_DEBUG_VERSION printf("glview:GL_RENDERER   = %s\n", (char *) glGetString(GL_RENDERER));
 	GLV_IF_DEBUG_VERSION printf("glview:GL_VERSION    = %s\n", (char *) glGetString(GL_VERSION));
+	GLV_IF_DEBUG_VERSION printf("glview:SL_VERSION    = %s\n", (char *) glGetString(GL_SHADING_LANGUAGE_VERSION));
 	//printf("glview:GL_VENDOR     = %s\n", (char *) glGetString(GL_VENDOR));
 	//printf("glview:GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
+
+	//glv_printOpenGLRuntimeEnvironment(glv_dpy);
 
 	weston_client_window__display_create(glv_dpy);
 
@@ -367,7 +366,7 @@ int glvCloseDisplay(glvDisplay display)
 	_glvCloseNativeDisplay(glv_dpy);
 	pthread_mutex_destroy(&glv_dpy->display_mutex);
 
-#ifdef GLV_OPENGL_ES2
+#ifdef _GLES1_EMULATION
    es1emu_Finish();
 #endif
 
@@ -1286,7 +1285,6 @@ void *glvSurfaceViewProc(void *param)
 {
 	GLV_WINDOW_t *glv_window;
 	EGLDisplay egl_dpy;
-	EGLenum api;
 	EGLContext egl_ctx;
 	static int instanceCount=0;
 	pthread_msq_msg_t	rmsg = {};
@@ -1302,23 +1300,23 @@ void *glvSurfaceViewProc(void *param)
 
 	egl_dpy = glv_window->glv_dpy->egl_dpy;
 
-	switch(glv_window->ctx.api){
-		case GLV_OPENGL_ES1_API:
-			api = 1;
-			break;
-		case GLV_OPENGL_ES2_API:
-			api = 2;
-			break;
-		default:
-			api = 2;
-			break;
-	}
 	//// egl-contexts collect all state descriptions needed required for operation
+#ifdef GLV_OPENGL_ES_SERIES
 	EGLint ctxattr[] = {
-		EGL_CONTEXT_CLIENT_VERSION, 2,	/* 1:opengles1.1 2:opengles2.0 */
+		EGL_CONTEXT_CLIENT_VERSION, GLV_EGL_CONTEXT_CLIENT_VERSION,
 		EGL_NONE
 	};
-	ctxattr[1] = api;
+#endif
+#ifdef GLV_OPENGL_GL_SERIES
+	EGLint ctxattr[] = {
+		EGL_CONTEXT_MAJOR_VERSION,GLV_EGL_CONTEXT_MAJOR_VERSION,
+		EGL_CONTEXT_MINOR_VERSION,GLV_EGL_CONTEXT_MINOR_VERSION,
+		EGL_CONTEXT_OPENGL_PROFILE_MASK,GLV_EGL_CONTEXT_OPENGL_PROFILE_MASK,
+		EGL_NONE
+	};
+#endif
+
+	eglBindAPI(GLV_EGL_OPENGL_API_TYPE);
 	egl_ctx = eglCreateContext(egl_dpy,glv_window->ctx.egl_config,EGL_NO_CONTEXT,ctxattr);
 	if(egl_ctx == EGL_NO_CONTEXT ) {
 	   fprintf(stderr,"glvSurfaceViewProc:Unable to create EGL context (eglError: %d)\n", eglGetError());
@@ -1338,7 +1336,7 @@ void *glvSurfaceViewProc(void *param)
    }
    instanceCount++;
 
-#ifdef GLV_OPENGL_ES2
+#ifdef _GLES1_EMULATION
 	es1emu_Init();
 #endif
 
@@ -1415,7 +1413,7 @@ void *glvSurfaceViewProc(void *param)
 	glvSelectDrawingWindow(NULL);
 	eglDestroyContext(egl_dpy, egl_ctx);
 
-#ifdef GLV_OPENGL_ES2
+#ifdef _GLES1_EMULATION
 	es1emu_Finish();
 #endif
 
@@ -1430,7 +1428,6 @@ void *glvSurfaceViewProc(void *param)
 glvWindow glvCreateThreadSurfaceView(glvWindow glv_win)
 {
 	int			pret = 0;
-	int			api;
 	pthread_t 	threadId;
 	GLV_WINDOW_t *glv_window = (GLV_WINDOW_t *)glv_win;
 	pthread_msq_id_t queue = PTHREAD_MSQ_ID_INITIALIZER;
@@ -1438,14 +1435,6 @@ glvWindow glvCreateThreadSurfaceView(glvWindow glv_win)
 	if(!glv_window){
 		return(NULL);
 	}
-
-#ifdef GLV_OPENGL_ES2
-   api = GLV_OPENGL_ES2_API;
-#else
-   api = GLV_OPENGL_ES1_API;
-#endif
-
-	glv_window->ctx.api = api;
 
 	memcpy(&glv_window->ctx.queue,&queue,sizeof(pthread_msq_id_t));
 
@@ -2560,7 +2549,11 @@ void glvWindow_setViewport(glvWindow glv_win,int width,int height)
 	glLoadIdentity();
 
 	// 座標体系設定
+#ifdef _GLES1_EMULATION
 	glOrthof(0, width, height, 0, -1, 1);
+#else
+	glOrtho(0, width, height, 0, -1, 1);
+#endif
 
 	// モデルビュー行列の設定
 	glMatrixMode(GL_MODELVIEW);
@@ -2855,6 +2848,7 @@ int glv_getInstanceType(void *glv_instance)
 	return(0);
 }
 
+// #####################################################################################################
 int glv_menu_init(GLV_W_MENU_t *menu)
 {
 	memset(menu,0,sizeof(GLV_W_MENU_t));
@@ -2920,6 +2914,7 @@ int glv_menu_setItem(GLV_W_MENU_t *menu,int n,char *text,int attr,int next,int f
   return(GLV_OK);
 }
 
+// #####################################################################################################
 /*
 Zz size_t(uint64_t)	: GLV_R_VALUE_TYPE__SIZE
 Ll int64_t			: GLV_R_VALUE_TYPE__INT64
@@ -3759,6 +3754,7 @@ glvInstanceId glv_getInstanceId(void *glv_instance)
 	return(instance->Id);
 }
 
+// #####################################################################################################
 char *glv_strdup(char *str)
 {
 	return strdup(str);
@@ -3800,3 +3796,93 @@ void *glv_memcpy(void *dest,void *src,size_t size)
 {
 	return memcpy(dest,src,size);
 }
+
+// #####################################################################################################
+int glv_isOpenGL_ES()
+{
+#ifdef GLV_OPENGL_ES_SERIES
+    return(1);
+#else
+    return(0);
+#endif
+}
+
+int glv_isEglBindAPI(EGLenum api)
+{
+#ifdef GLV_OPENGL_ES_SERIES
+    if(api == EGL_OPENGL_ES_API){
+        return(1);
+    }else{
+        return(0);
+    }
+#else
+    if(api == EGL_OPENGL_API){
+        return(1);
+    }else{
+        return(0);
+    }
+#endif
+}
+
+int glv_getEglVersion(glvDisplay glv_dpy,EGLenum *egl_major, EGLenum *egl_minor)
+{
+	GLV_DISPLAY_t	*display = (GLV_DISPLAY_t*)glv_dpy;
+
+	if(display == NULL){
+		*egl_major = 0;
+		*egl_minor = 0;
+		return(GLV_ERROR);
+	}
+	*egl_major = display->egl_major;
+	*egl_minor = display->egl_minor;
+	return(GLV_OK);
+}
+
+int glv_printOpenGLRuntimeEnvironment(glvDisplay glv_dpy)
+{
+	GLV_DISPLAY_t	*display = (GLV_DISPLAY_t*)glv_dpy;
+	const char *version;
+	int major = 0;
+	int minor = 0;
+	int rc = GLV_OK;
+
+#if 0
+	printf("EGL_VERSION   = %d.%d\n", display->egl_major, display->egl_minor);
+	printf("GL_RENDERER   = %s\n", (char *) glGetString(GL_RENDERER));
+	printf("GL_VERSION    = %s\n", (char *) glGetString(GL_VERSION));
+	printf("SL_VERSION    = %s\n", (char *) glGetString(GL_SHADING_LANGUAGE_VERSION));
+	//printf("glview:GL_VENDOR     = %s\n", (char *) glGetString(GL_VENDOR));
+	//printf("glview:GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
+#endif
+
+	printf("EGL version %d.%d\n", display->egl_major, display->egl_minor);
+
+	version = (const char *) glGetString(GL_VERSION);
+	if(version != 0){
+	    if(sscanf(version, "%d.%d", &major, &minor) == 2){
+			printf("OpenGL version %d.%d\n",major,minor);
+		}else if(sscanf(version, "OpenGL ES %d.%d", &major, &minor) == 2){
+			printf("OpenGL ES version %d.%d\n",major,minor);
+		}else{
+			printf("OpenGL unknown version\n");
+		}
+	}else{
+		rc = GLV_ERROR;
+	}
+
+	version = (const char *) glGetString(GL_SHADING_LANGUAGE_VERSION);
+	if(version != 0){
+	    if(sscanf(version, "%d.%d", &major, &minor) == 2){
+			printf("OpenGL GLSL version %d.%d\n",major,minor);
+		}else if(sscanf(version, "OpenGL ES GLSL ES %d.%d", &major, &minor) == 2){
+			printf("OpenGL ES GLSL ES version %d.%d\n",major,minor);
+		}else{
+			printf("OpenGL GLSL unknown version\n");
+		}
+	}else{
+		rc = GLV_ERROR;
+	}
+	return(rc);
+}
+
+// #####################################################################################################

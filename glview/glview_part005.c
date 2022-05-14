@@ -152,7 +152,7 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	gBkgdColor = gReleaseBkgdColor;
-	glColor4f_RGBA(gReleaseBkgdColor);
+	glvGl_ColorRGBA(gReleaseBkgdColor);
 	glvGl_drawRectangle(x,y,w,h);
 
 	kind =  glvWiget_kindSelectWigetStatus(wiget,&wigetStatus);
@@ -176,8 +176,8 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 		glvFont_SetPosition(x + w / 2,y + fontSize / 2);
 	}
 #endif
-	glvFont_setColor(gFontColor);
-	glvFont_setBkgdColor(gBkgdColor);
+	glvFont_setColorRGBA(gFontColor);
+	glvFont_setBkgdColorRGBA(gBkgdColor);
 
 	start_x = x;
 	for(num=0;num<user_data->cmdMenu[user_data->menuNumber].num;num++){
@@ -188,7 +188,7 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 		}
 		if(redraw == 1){
 		}else{
-			glColor4f_RGBA(GLV_SET_RGBA(   0,  0,  0,255));
+			glvGl_ColorRGBA(GLV_SET_RGBA(   0,  0,  0,255));
 		
 			if(user_data->pos_x[num] > (frameInfo.left_size + frameInfo.inner_width /* + frameInfo.right_edge_size */)){
 				width = frameInfo.left_size + frameInfo.inner_width /* + frameInfo.right_edge_size */ - start_x - 2;
@@ -199,23 +199,23 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 		}
 		if(focus == num){
 			//printf("cmd_menu_select_text_redraw focus = %d , kind = %d\n",focus,kind);
-			//glColor4f_RGBA(GLV_SET_RGBA(   0,  0,  0,255));
+			//glvGl_ColorRGBA(GLV_SET_RGBA(   0,  0,  0,255));
 			//glvGl_drawRectangle(start_x,y,user_data->pos_x[num] - start_x,h);
-			glvFont_setColor(gSelectColor);
+			glvFont_setColorRGBA(gSelectColor);
 			switch(kind){
 				case GLV_WIGET_STATUS_FOCUS:
-					//glColor4f_RGBA(gFocusBkgdColor);
+					//glvGl_ColorRGBA(gFocusBkgdColor);
 					gBkgdColor = gFocusBkgdColor;
-					glColor4f_RGBA(gFocusBkgdColor);
+					glvGl_ColorRGBA(gFocusBkgdColor);
 					break;
 				case GLV_WIGET_STATUS_PRESS:
 					gBkgdColor = gPressBkgdColor;
-					glColor4f_RGBA(gPressBkgdColor);
+					glvGl_ColorRGBA(gPressBkgdColor);
 					break;
 				case GLV_WIGET_STATUS_RELEASE:
 				default:
 					gBkgdColor = gReleaseBkgdColor;
-					glColor4f_RGBA(gReleaseBkgdColor);
+					glvGl_ColorRGBA(gReleaseBkgdColor);
 					break;
 			}
 			//if(user_data->pos_x[num] > 0){
@@ -223,9 +223,9 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 			//}
 		}else{
 			//printf("cmd_menu_select_text_redraw other = %d , kind = %d\n",num,kind);
-			glvFont_setColor(gFontColor);
+			glvFont_setColorRGBA(gFontColor);
 			gBkgdColor = gReleaseBkgdColor;
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			//if(user_data->pos_x[num] > 0){
 			//	glvGl_drawRectangle(start_x+1,y+1,user_data->pos_x[num] - start_x-2,h-2);
 			//}
@@ -243,7 +243,7 @@ static int wiget_cmd_menu_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 #endif
 			glvGl_drawRectangle(start_x+1,y+1,width,h-2);
 		}
-		glvFont_setBkgdColor(gBkgdColor);
+		glvFont_setBkgdColorRGBA(gBkgdColor);
 		if(user_data->pos_x[num] > (frameInfo.left_size + frameInfo.inner_width  /* + frameInfo.right_edge_size */)){
 			glvFont_printf("%s","");
 			break;

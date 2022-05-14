@@ -1,4 +1,4 @@
-# glview
+# glview version 0.1.18
 
  ## Opengl-based GUI toolkit for the Wayland display system.
 
@@ -10,7 +10,10 @@ gui toolkitアプリを作ってみました。
 
 ## 開発方針
 
-- 描画は、全てopenglで実装
+- 描画は、全てOpenGLで実装  
+　アプリの処理はOpenGL/ESまたはOpenGLで記述できます。  
+  （westonは、OpenGL/ESを使用しますが、waylandアプリはOpenGL/ES、OpenGLのどちらでも動作します。）
+　　glviewは、libgles2を使用する場合、OpenGL/ES1.1のいくつかのAPIをエミュレーションします。 
 
 - アプリケーションからwaylandのAPIを隠蔽
 
@@ -20,7 +23,8 @@ gui toolkitアプリを作ってみました。
 
 ## 開発環境
 
-- OS ：ubuntu 21.04,21.10、ビルドシステム：meson
+- OS ：ubuntu 21.04,21.10,22.04、ビルドシステム：meson
+- OpenGL: OpenGL/ES 2.0 Mesa 22.0.1 , OpenGL 4.1(Compatibility Profile) Mesa 22.0.1
 
 ## Special Thanks
 
@@ -64,13 +68,20 @@ sudo apt-get install meson
 git clone https://github.com/t-aikawa/glview.git
 cd glview
 chmod +x m mm simple-egl smoke test s001 s002
+
+# コンパイル
 ./m
+# ./m 又は ./m gles で、OpenGL/ES(libGLESv2.so)とリンクします。
+# ./m opengl で、OpenGL(libOpenGL.so)とリンクします。
 ---------------------------------------------------------------------
 ./s001
 ./s002
 ./smoke
 ./simple-egl
-./test 
+./test
+
+# 再コンパイルのみの場合は、以下を実行してください。
+./mm
 ```
 
 ## サンプルアプリ(スクリーンショット)

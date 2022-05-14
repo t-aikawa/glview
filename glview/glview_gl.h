@@ -116,30 +116,29 @@ void glvGl_DrawTexturesEx(uint32_t textureId,float x, float y, float width, floa
 void glvGl_thread_safe_init(void);
 
 void glvGl_init(void);
-void glvGl_LoadIdentity();
-void glvGl_Viewport(int32_t x, int32_t y, int32_t width, int32_t height);
-void glvGl_ClearColor(float r, float g, float b, float a);
-void glvGl_Clear(uint32_t mask);
-void glvGl_Color4f(float r, float g, float b, float a);
 void glvGl_ColorRGBA(GLV_RGBACOLOR rgba);
 void glvGl_ColorRGBATrans(GLV_RGBACOLOR rgba, float a);
 void glvGl_BeginBlend();
 void glvGl_EndBlend();
-void glvGl_PushMatrix();
-void glvGl_PopMatrix();
-void glvGl_Rotatef(float angle, float x, float y, float z);
-void glvGl_Translatef(float x, float y, float z);
-void glvGl_Scalef(float x, float y, float z);
 void glvGl_MatrixProjection();
 void glvGl_MatrixModelView();
+
+void glvGl_LoadIdentity();
+void glvGl_Viewport(int32_t x, int32_t y, int32_t width, int32_t height);
+void glvGl_ClearColor(float r, float g, float b, float a);
+void glvGl_Clear(uint32_t mask);
 void glvGl_Flush();
+void glvGl_Color4f(float r, float g, float b, float a);
+void glvGl_PushMatrix();
+void glvGl_PopMatrix();
 void glvGl_Orthof(float left, float right, float bottom, float top, float zNear, float zFar);
+void glvGl_Rotatef(float angle, float x, float y, float z);
+void glvGl_Scalef(float x, float y, float z);
+void glvGl_Translatef(float x, float y, float z);
 
 void glvGl_setEglContextInfo(EGLDisplay egl_dpy,EGLContext egl_ctx);
 EGLContext glvGl_GetEglContext(void);
 EGLDisplay glvGl_GetEglDisplay(void);
-
-void glColor4f_RGBA(uint32_t rgba);
 
 #ifdef __cplusplus
 }

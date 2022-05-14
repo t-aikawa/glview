@@ -174,7 +174,7 @@ static int wiget_list_box_select_text_redraw(glvWindow glv_win,glvSheet sheet,gl
 			break;
 	}
 
-	glColor4f_RGBA(gBaseBkgdColor);
+	glvGl_ColorRGBA(gBaseBkgdColor);
 	glvGl_drawRectangle(x,y,w,h);
 
 	//printf("wiget_list_box_select_text_redraw focus = %d , kind = %d\n",focus,kind);
@@ -182,8 +182,8 @@ static int wiget_list_box_select_text_redraw(glvWindow glv_win,glvSheet sheet,gl
 	//attr = GLV_FONT_LEFT;
 	attr = GLV_FONT_CENTER;
 	glvFont_SetStyle(GLV_FONT_NAME_TYPE1,fontSize,0.0f,0,GLV_FONT_NAME | GLV_FONT_NOMAL | GLV_FONT_SIZE | attr);
-	glvFont_setColor(gFontColor);
-	glvFont_setBkgdColor(gBkgdColor);
+	glvFont_setColorRGBA(gFontColor);
+	glvFont_setBkgdColorRGBA(gBkgdColor);
 	glvFont_SetlineSpace(lineSpace);
 
 	list_box_window_getMenu(glv_win,&menu);
@@ -195,38 +195,38 @@ static int wiget_list_box_select_text_redraw(glvWindow glv_win,glvSheet sheet,gl
 				glvFont_SetPosition(x + w / 2,y + item_height / 2);
 			}
 			if(select == num){
-				glvFont_setColor(gSelectColor);
+				glvFont_setColorRGBA(gSelectColor);
 				gBkgdColor = gSelectBkgdColor;
-				glColor4f_RGBA(gSelectBkgdColor);
+				glvGl_ColorRGBA(gSelectBkgdColor);
 				glvGl_drawRectangle(x,y,w,item_height);
 
 			}else if(focus == num){
 				//printf("wiget_list_box_select_text_redraw focus = %d , kind = %d\n",focus,kind);
-				glvFont_setColor(gSelectColor);
+				glvFont_setColorRGBA(gSelectColor);
 				switch(kind){
 					case GLV_WIGET_STATUS_FOCUS:
-						//glColor4f_RGBA(gFocusBkgdColor);
+						//glvGl_ColorRGBA(gFocusBkgdColor);
 						gBkgdColor = gReleaseBkgdColor;
-						glColor4f_RGBA(gReleaseBkgdColor);
+						glvGl_ColorRGBA(gReleaseBkgdColor);
 						break;
 					case GLV_WIGET_STATUS_PRESS:
 						gBkgdColor = gPressBkgdColor;
-						glColor4f_RGBA(gPressBkgdColor);
+						glvGl_ColorRGBA(gPressBkgdColor);
 						break;
 					case GLV_WIGET_STATUS_RELEASE:
 					default:
 						gBkgdColor = gReleaseBkgdColor;
-						glColor4f_RGBA(gReleaseBkgdColor);
+						glvGl_ColorRGBA(gReleaseBkgdColor);
 						break;
 				}
 				glvGl_drawRectangle(x,y,w,item_height);
 			}else{
-				glvFont_setColor(gFontColor);
+				glvFont_setColorRGBA(gFontColor);
 				gBkgdColor = gBaseBkgdColor;
-				glColor4f_RGBA(gBaseBkgdColor);			
+				glvGl_ColorRGBA(gBaseBkgdColor);			
 			}
 			
-			glvFont_setBkgdColor(gBkgdColor);
+			glvFont_setBkgdColorRGBA(gBkgdColor);
 			glvFont_printf("%s",menu->item[num].text);
 			y += item_height;
 		}
@@ -516,18 +516,18 @@ static int wiget_list_box_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 	switch(kind){
 		case GLV_WIGET_STATUS_FOCUS:
 			gBkgdColor = gFocusBkgdColor;
-			glColor4f_RGBA(gFocusBkgdColor);
+			glvGl_ColorRGBA(gFocusBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_PRESS:
 			gBkgdColor = gPressBkgdColor;
-			glColor4f_RGBA(gPressBkgdColor);
+			glvGl_ColorRGBA(gPressBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_RELEASE:
 		default:
 			gBkgdColor = gReleaseBkgdColor;
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 	}
@@ -540,8 +540,8 @@ static int wiget_list_box_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wiget
 	}else{
 		glvFont_SetPosition(x + w / 2,y + (fontSize+6) / 2);
 	}
-	glvFont_setColor(gFontColor);
-	glvFont_setBkgdColor(gBkgdColor);
+	glvFont_setColorRGBA(gFontColor);
+	glvFont_setBkgdColorRGBA(gBkgdColor);
 	//glvFont_SetlineSpace(lineSpace);
 
 	for(num=0;num<user_data->menu.num;num++){

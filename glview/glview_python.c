@@ -305,7 +305,7 @@ GLV_CONST_DEFINE(GLV_R_VALUE_TYPE__COLOR,int16);	// 4byte: GLV_SET_RGBA(r,g,b,a)
 GLV_CONST_DEFINE(_GLV_R_VALUE_MAX,int16);
 
 // #####################################################################################################
-// /usr/include/xkbcommon/xkbcommon-keysyms.h
+// xkbcommon-keysyms.h
 /*
  * TTY function keys, cleverly chosen to map to ASCII, for convenience of
  * programming, but could have been arbitrary (at the cost of lookup
@@ -380,7 +380,7 @@ GLV_CONST_DEFINE(GL_NORMAL_ARRAY,uint16);
 GLV_CONST_DEFINE(GL_COLOR_ARRAY,uint16);
 GLV_CONST_DEFINE(GL_TEXTURE_COORD_ARRAY,uint16);
 // #####################################################################################################
-// /usr/include/GLES2/gl2.h
+// GLES2/gl2.h
 GLV_CONST_DEFINE(GL_DEPTH_BUFFER_BIT,uint32);
 GLV_CONST_DEFINE(GL_STENCIL_BUFFER_BIT,uint32);
 GLV_CONST_DEFINE(GL_COLOR_BUFFER_BIT,uint32);
@@ -676,12 +676,18 @@ GLV_CONST_DEFINE(GL_NONE,uint16);
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_COMPLETE,uint16);
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,uint16);
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,uint16);
+#ifdef GLV_OPENGL_ES_SERIES
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS,uint16);
+#endif
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_UNSUPPORTED,uint16);
 GLV_CONST_DEFINE(GL_FRAMEBUFFER_BINDING,uint16);
 GLV_CONST_DEFINE(GL_RENDERBUFFER_BINDING,uint16);
 GLV_CONST_DEFINE(GL_MAX_RENDERBUFFER_SIZE,uint16);
 GLV_CONST_DEFINE(GL_INVALID_FRAMEBUFFER_OPERATION,uint16);
+// #####################################################################################################
+// EGL/egl.h
+GLV_CONST_DEFINE(EGL_OPENGL_ES_API,uint16);
+GLV_CONST_DEFINE(EGL_OPENGL_API   ,uint16);
 // #####################################################################################################
 
 void glv__py_print_array(float *array,int row,int col,char *text)

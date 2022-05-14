@@ -22,6 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "config.h"
 #include <math.h>
 #include <string.h>
 #include <GLES2/gl2.h>

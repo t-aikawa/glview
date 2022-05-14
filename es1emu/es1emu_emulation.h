@@ -22,10 +22,16 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _MP_ES1EMULATION_H
-#define _MP_ES1EMULATION_H
+#ifndef _ES1EMU_EMULATION_H
+#define _ES1EMU_EMULATION_H
 
+#ifdef _OPENGL__FIXED_FUNCTION_PIPLINE_SUPPORT
+#if _OPENGL__FIXED_FUNCTION_PIPLINE_SUPPORT == 0
 #define _GLES1_EMULATION
+#endif
+#else
+#define _GLES1_EMULATION
+#endif
 
 #ifdef _GLES1_EMULATION
 
@@ -73,6 +79,22 @@ void es1emu_LoadMatrix();
 #define GL_COLOR_ARRAY                    0x8076
 #define GL_TEXTURE_COORD_ARRAY            0x8078
 
+GL_API void GL_APIENTRY es1emu_glEnableClientState (GLenum array);
+GL_API void GL_APIENTRY es1emu_glDisableClientState (GLenum array);
+GL_API void GL_APIENTRY es1emu_glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+GL_API void GL_APIENTRY es1emu_glPopMatrix (void);
+GL_API void GL_APIENTRY es1emu_glPushMatrix (void);
+GL_API void GL_APIENTRY es1emu_glMatrixMode (GLenum mode);
+GL_API void GL_APIENTRY es1emu_glLoadIdentity (void);
+GL_API void GL_APIENTRY es1emu_glOrthof (GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar);
+GL_API void GL_APIENTRY es1emu_glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+GL_API void GL_APIENTRY es1emu_glScalef (GLfloat x, GLfloat y, GLfloat z);
+GL_API void GL_APIENTRY es1emu_glTranslatef (GLfloat x, GLfloat y, GLfloat z);
+GL_API void GL_APIENTRY es1emu_glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+GL_API void GL_APIENTRY es1emu_glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+GL_API void GL_APIENTRY es1emu_glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+
+
 GL_API void GL_APIENTRY glEnableClientState (GLenum array);
 GL_API void GL_APIENTRY glDisableClientState (GLenum array);
 GL_API void GL_APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
@@ -84,11 +106,10 @@ GL_API void GL_APIENTRY glOrthof (GLfloat left, GLfloat right, GLfloat bottom, G
 GL_API void GL_APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 GL_API void GL_APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
 GL_API void GL_APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z);
-
 GL_API void GL_APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-GL_API void GL_APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+GL_API void GL_APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 GL_API void GL_APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 
 #endif // _GLES1_EMULATION
 
-#endif	// _MP_ES1EMULATION_H
+#endif	// _ES1EMU_EMULATION_H

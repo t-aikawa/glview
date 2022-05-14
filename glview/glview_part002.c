@@ -108,22 +108,22 @@ static int wiget_slider_bar_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wig
 
 	switch(kind){
 		case GLV_WIGET_STATUS_FOCUS:
-			glColor4f_RGBA(gFocusBkgdColor);
+			glvGl_ColorRGBA(gFocusBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_PRESS:
-			glColor4f_RGBA(gPressBkgdColor);
+			glvGl_ColorRGBA(gPressBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_RELEASE:
 		default:
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 	}
 
 	//glColor4f(1.0, 1.0, 1.0, 1.0);
-	glColor4f_RGBA(GLV_SET_RGBA(255,212,  0,255));
+	glvGl_ColorRGBA(GLV_SET_RGBA(255,212,  0,255));
 	glvGl_drawRectangle(geometry.x + (user_data->position - user_data->min) * geometry.width / (user_data->range - user_data->min) - 20/2,geometry.y,20,geometry.height);
 
 	//printf("wiget_slider_bar_redraw\n");
@@ -248,11 +248,11 @@ static int wiget_check_box_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wige
 
 	switch(kind){
 		case GLV_WIGET_STATUS_FOCUS:
-			glColor4f_RGBA(gFocusBkgdColor);
+			glvGl_ColorRGBA(gFocusBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 		case GLV_WIGET_STATUS_PRESS:
-			glColor4f_RGBA(gPressBkgdColor);
+			glvGl_ColorRGBA(gPressBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			if(check == 0){
 				check = 1;
@@ -262,7 +262,7 @@ static int wiget_check_box_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wige
 			break;
 		case GLV_WIGET_STATUS_RELEASE:
 		default:
-			glColor4f_RGBA(gReleaseBkgdColor);
+			glvGl_ColorRGBA(gReleaseBkgdColor);
 			glvGl_drawRectangle(x,y,w,h);
 			break;
 	}
@@ -270,7 +270,7 @@ static int wiget_check_box_redraw(glvWindow glv_win,glvSheet sheet,glvWiget wige
 	if(check == 1){
 		int offset = 2;
 		GLV_T_POINT_t point[2];
-		glColor4f_RGBA(gBoxColor);
+		glvGl_ColorRGBA(gBoxColor);
 		//glColor4f(0.0, 0.0, 0.0, 1.0);
 
 		glEnable(GL_BLEND);

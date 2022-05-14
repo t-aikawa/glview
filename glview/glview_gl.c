@@ -105,33 +105,9 @@ EGLDisplay glvGl_GetEglDisplay(void)
 /**
  * @brief		初期化
  */
-#if 0
 void glvGl_init(void)
 {
-#ifdef _GLES1_EMULATION
-	glDisable(GL_DITHER);
-	glDisable(GL_DEPTH_TEST);
-#else
-	glDisable(GL_LIGHTING);
-	// ディザを無効化
-	glDisable(GL_DITHER);
-
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
-	glDisable(GL_DEPTH_TEST);
-
-	glShadeModel(GL_FLAT);
-#endif
-	// 頂点配列の使用を許可
-	glEnableClientState(GL_VERTEX_ARRAY);
-
-	// 画面クリア
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-#else
-void glvGl_init(void)
-{
-#ifdef GLV_OPENGL_ES1
+#ifndef _GLES1_EMULATION
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 	glDisable(GL_LIGHTING);
 	glShadeModel(GL_FLAT);
@@ -150,7 +126,6 @@ void glvGl_init(void)
 	// 画面クリア
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-#endif
 
 /**
  * @brief		平方根(ルート)計算
@@ -312,10 +287,11 @@ float glvGl_degree(const GLV_T_POINT_t *v0, const GLV_T_POINT_t *v1)
 void glvGl_draw(const int32_t mode, const GLV_T_POINT_t* pPos, int32_t cnt)
 {
 	glVertexPointer(2, GL_FLOAT, 0, pPos);
+
 #ifdef _GLES1_EMULATION
-//	es1emu_UseProgram(ES1EMU_PROGRAM_VERTEX_ARRAY);
 	es1emu_LoadMatrix();
 #endif
+
 	glDrawArrays(mode, 0, cnt);
 }
 
@@ -701,10 +677,11 @@ void glvGl_drawColor(const int32_t mode, const GLV_T_POINT_t* pPos, const GLV_T_
 
 	glVertexPointer(2, GL_FLOAT, 0, pPos);
 	glColorPointer(4, GL_UNSIGNED_BYTE, 0, pColor);
+
 #ifdef _GLES1_EMULATION
-//	es1emu_UseProgram(ES1EMU_PROGRAM_COLOR_ARRAY);
 	es1emu_LoadMatrix();
 #endif
+
 	glDrawArrays(mode, 0, cnt);
 
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -814,9 +791,9 @@ int glvGl_DrawVBO(const GLV_T_VBO_INFO_t *pVbo)
 	glColorPointer(4, GL_UNSIGNED_BYTE, 0, (void*)(sizeof(GLV_T_POINT_t) * pVbo->pointCnt));
 
 #ifdef _GLES1_EMULATION
-//	es1emu_UseProgram(ES1EMU_PROGRAM_COLOR_ARRAY);
 	es1emu_LoadMatrix();
 #endif
+
 	glDrawArrays(pVbo->type, 0, pVbo->pointCnt);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -838,18 +815,22 @@ uint32_t glvGl_GenTextures(const uint8_t* pByteArray, int32_t width, int32_t hei
 	}
 
 	glGenTextures(1, &textureID);
+
 #ifdef _GLES1_EMULATION
 	glActiveTexture(GL_TEXTURE0);
 #endif
+
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 #ifdef _GLES1_EMULATION
 #else
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 #endif
+
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLint)width, (GLint)height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)pByteArray);
 
 	return ((uint32_t)textureID);
@@ -886,9 +867,9 @@ void glvGl_DrawTextures(uint32_t pTextureID, const GLV_T_POINT_t *pSquares)
 	glTexCoordPointer(2, GL_FLOAT, 0, textureCoords);
 
 #ifdef _GLES1_EMULATION
-//	es1emu_UseProgram(ES1EMU_PROGRAM_TEXTURE_ARRAY);
 	es1emu_LoadMatrix();
 #endif
+
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glDisable(GL_TEXTURE_2D);
@@ -1069,12 +1050,16 @@ void glvGl_Flush()
  */
 void glvGl_Orthof(float left, float right, float bottom, float top, float zNear, float zFar)
 {
+#ifdef _GLES1_EMULATION
 	glOrthof(left, right, bottom, top, zNear, zFar);
+#else
+	glOrtho(left, right, bottom, top, zNear, zFar);
+#endif
 }
 
 void glvGl_GL_Init(void)
 {
-#ifdef GLV_OPENGL_ES1
+#ifndef _GLES1_EMULATION
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 	glDisable(GL_LIGHTING);
 	glShadeModel(GL_FLAT);
@@ -1092,9 +1077,4 @@ void glvGl_GL_Init(void)
     //glClearColor(0.0, 0.0, 0.0, 0.0);
 	// 画面クリア
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void glColor4f_RGBA(uint32_t rgba)
-{
-	glColor4f(GLV_GET_FR(rgba), GLV_GET_FG(rgba), GLV_GET_FB(rgba), GLV_GET_FA(rgba));
 }
